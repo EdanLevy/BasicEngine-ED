@@ -128,13 +128,13 @@ void Scene::CustomDraw(int shaderIndx, int cameraIndx, int buffer, bool toClear,
 			Clear(0, 0, 0, 0);
 	}
 	if (screenNum == 0)
-		glViewport(0, 0, 256, 256);
+		glViewport(0, 256, 256, 256);
 	if (screenNum == 1)
 		glViewport(256, 256, 256, 256);
 	if (screenNum == 2)
-		glViewport(256, 0, 256, 256);
+		glViewport(0, 0, 256, 256);
 	if (screenNum == 3)
-		glViewport(0, 256, 256, 256);
+		glViewport(256, 0, 256, 256);
 		if (shapes[shapeIndex]->Is2Render())
 		{
 			glm::mat4 Model = Normal * shapes[shapeIndex]->MakeTrans();
