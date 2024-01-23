@@ -13,4 +13,5 @@ out vec4 fragColor;
 void main()
 {
 	fragColor = texture(sampler, texCoord0)* vec4(color0,1.0); //you must have gl_FragColor
+
 }

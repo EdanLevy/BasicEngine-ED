@@ -26,7 +26,7 @@ void Game::Init()
 
 	AddShader("../res/shaders/pickingShader");
     AddShader("../res/shaders/basicShader");
-    AddShader("../res/shaders/redShader");
+    AddShader("../res/shaders/GaussianBlurShader");
     AddShader("../res/shaders/greenShader");
     AddShader("../res/shaders/blueShader");
 
