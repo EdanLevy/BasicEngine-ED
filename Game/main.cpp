@@ -20,24 +20,29 @@ int main(int argc, char* argv[])
 	scn->Init();
 
 	display.SetScene(scn);
+    scn->AddShape(Game::Plane,1,GL_TRIANGLES);
+    scn->AddShape(Game::Plane,1,GL_TRIANGLES);
+    scn->AddShape(Game::Plane,1,GL_TRIANGLES);
+    scn->AddShape(Game::Plane,1,GL_TRIANGLES);
 
 	scn->AddTexture("../res/textures/lena256.jpg", false);
-	scn->SetShapeTex(0, 0);
-	scn->CustomDraw(1, 0, scn->BACK, true, false, 0);
+	scn->SetShapeTex(1, 0);
+    scn->SetShapeShader(1,2);
+	scn->CustomDraw(1, 0, scn->BACK, true, false,0,1);
 
-	scn->AddTexture("../res/textures/lena256.jpg", false);
-	scn->SetShapeTex(0, 1);
-	scn->CustomDraw(1, 0, scn->BACK, false, false, 1);
+    scn->AddTexture("../res/textures/lena256.jpg", false);
+    scn->SetShapeTex(2, 1);
+    scn->CustomDraw(2, 0, scn->BACK, false, false, 1,2);
 
-	scn->AddTexture("../res/textures/lena256.jpg", false);
-	scn->SetShapeTex(0, 2);
-	scn->CustomDraw(1, 0, scn->BACK, false, false, 2);
+    scn->AddTexture("../res/textures/lena256.jpg", false);
+    scn->SetShapeTex(3, 2);
+    scn->CustomDraw(1, 0, scn->BACK, false, false, 2,3);
 
-	scn->AddTexture("../res/textures/lena256.jpg", false);
-	scn->SetShapeTex(0, 3);
-	scn->CustomDraw(1, 0, scn->BACK, false, false, 3);
+    scn->AddTexture("../res/textures/lena256.jpg", false);
+    scn->SetShapeTex(4, 3);
+    scn->CustomDraw(1, 0, scn->BACK, false, false, 3,4);
 
-	scn->Motion();
+    scn->Motion();
 	display.SwapBuffers();
 	while (!display.CloseWindow())
 	{

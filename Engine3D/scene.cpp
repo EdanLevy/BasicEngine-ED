@@ -113,7 +113,7 @@ void Scene::Draw(int shaderIndx, int cameraIndx, int buffer, bool toClear, bool 
 	}
 	pickedShape = p;
 }
-void Scene::CustomDraw(int shaderIndx, int cameraIndx, int buffer, bool toClear, bool debugMode, int screenNum)
+void Scene::CustomDraw(int shaderIndx, int cameraIndx, int buffer, bool toClear, bool debugMode, int screenNum,int shapeIndex)
 {
 	glEnable(GL_DEPTH_TEST);
 	glm::mat4 Normal = MakeTrans();
@@ -135,24 +135,21 @@ void Scene::CustomDraw(int shaderIndx, int cameraIndx, int buffer, bool toClear,
 		glViewport(256, 0, 256, 256);
 	if (screenNum == 3)
 		glViewport(0, 256, 256, 256);
-	for (unsigned int i = 0; i < shapes.size(); i++)
-	{
-		if (shapes[i]->Is2Render())
+		if (shapes[shapeIndex]->Is2Render())
 		{
-			glm::mat4 Model = Normal * shapes[i]->MakeTrans();
+			glm::mat4 Model = Normal * shapes[shapeIndex]->MakeTrans();
 
 			if (shaderIndx > 0)
 			{
-				Update(MVP, Model, shapes[i]->GetShader());
-				shapes[i]->Draw(shaders, textures, false);
+				Update(MVP, Model, shapes[shapeIndex]->GetShader());
+				shapes[shapeIndex]->Draw(shaders, textures, false);
 			}
 			else
 			{ //picking
 				Update(MVP, Model, 0);
-				shapes[i]->Draw(shaders, textures, true);
+				shapes[shapeIndex]->Draw(shaders, textures, true);
 			}
 		}
-	}
 	pickedShape = p;
 }
 void Scene::MoveCamera(int cameraIndx, int type, float amt)

@@ -25,9 +25,11 @@ void Game::Init()
 {
 
 	AddShader("../res/shaders/pickingShader");
-	AddShader("../res/shaders/basicShader");
+    AddShader("../res/shaders/basicShader");
+    AddShader("../res/shaders/redShader");
 
-	//AddTexture("../res/textures/lena256.jpg",false);
+
+    //AddTexture("../res/textures/lena256.jpg",false);
 
 
 	AddShape(Plane, -1, TRIANGLES);
