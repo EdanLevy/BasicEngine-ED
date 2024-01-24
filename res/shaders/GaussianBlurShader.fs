@@ -15,15 +15,21 @@ void main()
 	//fragColor = texture(sampler, texCoord0)* vec4(color0,1.0); //you must have gl_FragColor
 
 	vec4 blurCon= vec4(0.0,0.0,0.0,1.0); //define new base frag
-        float kernel[9] = float[9](
+        mat3 kernel = mat3(
         1.0 / 16.0, 2.0 / 16.0, 1.0 / 16.0,
         2.0 / 16.0, 4.0 / 16.0, 2.0 / 16.0,
         1.0 / 16.0, 2.0 / 16.0, 1.0 / 16.0);
+// mat3 kernel = mat3(
+//         1.0, 2.0 , 1.0 ,
+//         10.0 , 4.0 , 10.0 ,
+//         1.0 , 2.0 , 1.0 );
     for(int y=0;y<3;y++){
         for(int x=0;x<3;x++){
-            ivec2 offset = ivec2(x-1,y-1); //get current offset compared to central frag
-            vec2 curTexCoord = texCoord0+(offset);
-            blurCon += texture(sampler, curTexCoord) * kernel[y*3 + x];
+            vec2 offset = vec2(x-1,y-1); //get current offset compared to central frag
+            if(texCoord0.x!=0 && texCoord0.y!=0){
+                vec2 curTexCoord = texCoord0+(offset/256);
+                blurCon += texture(sampler, curTexCoord) * kernel[x][y];
+                }
         }
     }
     fragColor=blurCon;
