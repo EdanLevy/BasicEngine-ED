@@ -16,22 +16,20 @@ void main()
 
 	vec4 blurCon= vec4(0.0,0.0,0.0,1.0); //define new base frag
         mat3 kernel = mat3(
-        1.0 / 16.0, 2.0 / 16.0, 1.0 / 16.0,
-        2.0 / 16.0, 4.0 / 16.0, 2.0 / 16.0,
-        1.0 / 16.0, 2.0 / 16.0, 1.0 / 16.0);
-// mat3 kernel = mat3(
-//         1.0, 2.0 , 1.0 ,
-//         10.0 , 4.0 , 10.0 ,
-//         1.0 , 2.0 , 1.0 );
+        1.0 , 2.0 , 1.0 ,
+        2.0 , 4.0 , 2.0 ,
+        1.0 , 2.0 , 1.0 );
+    kernel= kernel/16;
     for(int y=0;y<3;y++){
         for(int x=0;x<3;x++){
             vec2 offset = vec2(x-1,y-1); //get current offset compared to central frag
-            if(texCoord0.x!=0 && texCoord0.y!=0){
+       //     if(texCoord0.x!=0 && texCoord0.y!=0){
                 vec2 curTexCoord = texCoord0+(offset/256);
-                blurCon += texture(sampler, curTexCoord) * kernel[x][y];
-                }
+                blurCon.rgb += texture(sampler, curTexCoord).rgb * kernel[x][y];
+         //       }
         }
     }
-    fragColor=blurCon;
+//    fragColor=blurCon;
+     fragColor=texture(sampler,texCoord0)-blurCon;
     fragColor.a=1.0; //just in case it was changed, opacity set to none
 }

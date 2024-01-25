@@ -6,6 +6,7 @@
 #include <vector>
 
 
+
 class Scene : public MovableGLM
 {
 
@@ -51,6 +52,8 @@ public:
 	inline float GetFar(int cameraIndx) { return cameras[cameraIndx]->GetFar(); }
 
 	void ReadPixel();
+    void ApplyEdgeFilter(int screenNum);
+    void ApplyGaussOnPixel(size_t Xcoo, size_t Ycoo, const unsigned char *pixels);
 
 	inline float GetAngle(int cameraIndx) { return cameras[cameraIndx]->GetAngle(); }
 	inline void Activate() { isActive = true; }
@@ -66,7 +69,9 @@ public:
 	inline void SetShapeShader(int shpIndx, int shdrIndx) { shapes[shpIndx]->SetShader(shdrIndx); }
 
 private:
-
+    const float GaussianKernel[3][3]={ {1.0/ 16.0, 2.0 / 16.0, 1.0 / 16.0},
+                         {2.0 / 16.0, 4.0 / 16.0, 2.0 / 16.0},
+                         {1.0 / 16.0, 2.0 / 16.0, 1.0/ 16.0}};
 	std::vector<Camera*> cameras;
 
 	float depth;
@@ -83,5 +88,6 @@ protected:
 	int pickedShape;
 
 	bool isActive;
+
 };
 

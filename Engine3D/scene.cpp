@@ -1,6 +1,6 @@
 #include "scene.h"
-#include "glad/include/glad/glad.h"
 #include <iostream>
+#include "glad/include/glad/glad.h"
 
 static void printMat(const glm::mat4 mat)
 {
@@ -127,9 +127,11 @@ void Scene::CustomDraw(int shaderIndx, int cameraIndx, int buffer, bool toClear,
 		else
 			Clear(0, 0, 0, 0);
 	}
-	if (screenNum == 0)
-		glViewport(0, 256, 256, 256);
-	if (screenNum == 1)
+    if (screenNum == 0){
+        glViewport(0, 256, 256, 256);
+        ApplyEdgeFilter(screenNum);
+    }
+    if (screenNum == 1)
 		glViewport(256, 256, 256, 256);
 	if (screenNum == 2)
 		glViewport(0, 0, 256, 256);
@@ -301,8 +303,47 @@ Scene::~Scene(void)
 	{
 		delete tex;
 	}
-
 }
+
+void Scene::ApplyEdgeFilter(int screenNum) {
+    Texture* tex=textures[shapes[screenNum+1]->GetTexture()];
+    tex->Bind(tex->GetSlot());
+    GLubyte* pixels=new GLubyte [256*256*4];
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    GLuint r, g, b, a; // or GLubyte r, g, b, a;
+    size_t x, y; // line and column of the pixel
+
+    for(y=1;y<255;y++){
+        for(x=1;x<255;x++) {
+            size_t elmes_per_line = 256 * 4; // elements per line = 256 * "RGBA"
+            size_t row = y * elmes_per_line;
+            size_t col = x * 4;
+            r = pixels[row + col];
+            g = pixels[row + col + 1];
+            b = pixels[row + col + 2];
+            a = pixels[row + col + 3];
+            ApplyGaussOnPixel(x,y,pixels);
+
+        }
+    }
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 256, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+}
+
+void Scene::ApplyGaussOnPixel(size_t Xcoo, size_t Ycoo, const unsigned char *pixels) {
+    size_t elmes_per_line = 256 * 4; // elements per line = 256 * "RGBA"
+    size_t row = Ycoo * elmes_per_line;
+    size_t col = Xcoo * 4;
+    GLuint r, g, b; // or GLubyte r, g, b;
+    r = pixels[row + col];
+    g = pixels[row + col + 1];
+    b = pixels[row + col + 2];
+    for(int x=-1;x<2;x++){
+        for(int y=-1;y<2;y++){
+
+        }
+    }
+}
+
 
 
 

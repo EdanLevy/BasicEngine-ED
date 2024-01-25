@@ -26,9 +26,9 @@ void Game::Init()
 
 	AddShader("../res/shaders/pickingShader");
     AddShader("../res/shaders/basicShader");
-    AddShader("../res/shaders/GaussianBlurShader");
-    AddShader("../res/shaders/greenShader");
-    AddShader("../res/shaders/blueShader");
+//    AddShader("../res/shaders/GaussianBlurShader");
+//    AddShader("../res/shaders/greenShader");
+//    AddShader("../res/shaders/blueShader");
 
 
     //AddTexture("../res/textures/lena256.jpg",false);
