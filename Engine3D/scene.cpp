@@ -2,6 +2,13 @@
 #include <iostream>
 #include "glad/include/glad/glad.h"
 
+#define PI 3.14159265358979323846
+#define LOW_THRESHOLD 0.3
+#define HIGH_THRESHOLD 0.7
+#define IMAGE_SIZE 256
+#define WHITE_PIXEL 255
+#define BLACK_PIXEL 0
+
 static void printMat(const glm::mat4 mat) {
     printf(" matrix: \n");
     for (int i = 0; i < 4; i++) {
@@ -110,17 +117,17 @@ void Scene::CustomDraw(int shaderIndx, int cameraIndx, int buffer, bool toClear,
             Clear(0, 0, 0, 0);
     }
     if (screenNum == 0) {
-        glViewport(0, 256, 256, 256);
+        glViewport(0, IMAGE_SIZE, IMAGE_SIZE, IMAGE_SIZE);
     }
     if (screenNum == 1) {
-        glViewport(256, 256, 256, 256);
+        glViewport(IMAGE_SIZE, IMAGE_SIZE, IMAGE_SIZE, IMAGE_SIZE);
         ApplyEdgeFilter(screenNum);
     }
     if (screenNum == 2) {
-        glViewport(0, 0, 256, 256);
+        glViewport(0, 0, IMAGE_SIZE, IMAGE_SIZE);
     }
     if (screenNum == 3) {
-        glViewport(256, 0, 256, 256);
+        glViewport(IMAGE_SIZE, 0, IMAGE_SIZE, IMAGE_SIZE);
     }
     if (shapes[shapeIndex]->Is2Render()) {
         glm::mat4 Model = Normal * shapes[shapeIndex]->MakeTrans();
@@ -267,82 +274,73 @@ Scene::~Scene(void) {
 void Scene::ApplyEdgeFilter(int screenNum) {
     Texture *tex = textures[shapes[screenNum + 1]->GetTexture()];
     tex->Bind(tex->GetSlot());
-    GLubyte *pixels = new GLubyte[256 * 256 * 4];
+    GLubyte *pixels = new GLubyte[IMAGE_SIZE * IMAGE_SIZE * 4];
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-    GLuint r, g, b, a; // or GLubyte r, g, b, a;
-    size_t x, y; // line and column of the pixel
-    size_t elmes_per_line = 256 * 4; // elements per line = 256 * "RGBA"
-    auto *gradientMagnitude = new double[256 * 256]; //single value for each pixel
-    auto *gradientDirection = new double[256 * 256]; //single value for each pixel
+    int x, y; // line and column
+    size_t lineSize = IMAGE_SIZE * 4; // elements per line = IMAGE_SIZE * "RGBA"
+    auto *gradientMagnitude = new double[IMAGE_SIZE * IMAGE_SIZE]; //single value for each pixel
+    auto *gradientDirection = new double[IMAGE_SIZE * IMAGE_SIZE]; //single value for each pixel
     CalculateGradientSobel(pixels, gradientMagnitude, gradientDirection);
     const double pi = 3.14159265358979323846;
-    for (y = 1; y < 255; y++) {
-        for (x = 1; x < 255; x++) {
-            const size_t row = y * elmes_per_line;
+    for (y = 1; y < IMAGE_SIZE - 1; y++) {
+        for (x = 1; x < IMAGE_SIZE - 1; x++) {
+            const size_t row = y * lineSize;
             const size_t col = x * 4;
-            // size_t index = row + col;
-            // size_t row = y * elmes_per_line;
-            // size_t col = x * 4;
-            // r = pixels[row + col];
-            // g = pixels[row + col + 1];
-            // b = pixels[row + col + 2];
-            // a = pixels[row + col + 3];
 
             ApplyGaussOnPixel(x, y, pixels);
-            size_t gradRow = y*256;
+            size_t gradRow = y * IMAGE_SIZE;
             size_t gradCol = x;
-            if (gradientDirection[gradRow + gradCol] < pi / 4) { //case: angle= 0
+            if (gradientDirection[gradRow + gradCol] < PI / 4) { //case: angle= 0
                 if (gradientMagnitude[gradCol + gradRow] > gradientMagnitude[gradCol + gradRow + 1] &&
                     gradientMagnitude[gradCol + gradRow] > gradientMagnitude[gradCol + gradRow - 1])
                     Edge(row, col, pixels);
                 else NonEdge(row, col, pixels);
-            } else if (gradientDirection[gradRow + gradCol] < pi / 2) { //angle =45
-                if (gradientMagnitude[gradCol + gradRow] > gradientMagnitude[gradRow - 256 + gradCol + 1] &&
-                    gradientMagnitude[gradCol + gradRow] > gradientMagnitude[gradRow + 256 + gradCol - 1])
+            } else if (gradientDirection[gradRow + gradCol] < (PI / 2)) { //angle =4
+                if (gradientMagnitude[gradCol + gradRow] > gradientMagnitude[gradRow - IMAGE_SIZE + gradCol + 1] &&
+                    gradientMagnitude[gradCol + gradRow] > gradientMagnitude[gradRow + IMAGE_SIZE + gradCol - 1])
                     Edge(row, col, pixels);
                 else NonEdge(row, col, pixels);
-            } else if (gradientDirection[gradRow + gradCol] < (3 * pi) / 4) { //angle =90
-                if (gradientMagnitude[gradCol + gradRow] > gradientMagnitude[gradCol + gradRow + 256] &&
-                    gradientMagnitude[gradCol + gradRow] > gradientMagnitude[gradCol + gradRow - 256])
+            } else if (gradientDirection[gradRow + gradCol] < (3 * PI) / 4) { //angle =90
+                if (gradientMagnitude[gradCol + gradRow] > gradientMagnitude[gradCol + gradRow + IMAGE_SIZE] &&
+                    gradientMagnitude[gradCol + gradRow] > gradientMagnitude[gradCol + gradRow - IMAGE_SIZE])
                     Edge(row, col, pixels);
                 else NonEdge(row, col, pixels);
             } else { //angle= 135
-                if (gradientMagnitude[gradCol + gradRow] > gradientMagnitude[gradRow + 256 + gradCol + 1] &&
-                    gradientMagnitude[gradCol + gradRow] > gradientMagnitude[gradRow - 256 + gradCol - 1])
+                if (gradientMagnitude[gradCol + gradRow] > gradientMagnitude[gradRow + IMAGE_SIZE + gradCol + 1] &&
+                    gradientMagnitude[gradCol + gradRow] > gradientMagnitude[gradRow - IMAGE_SIZE + gradCol - 1])
                     Edge(row, col, pixels);
                 else NonEdge(row, col, pixels);
             }
-            if(pixels[row+col]== 255 && gradientMagnitude[gradCol+gradRow]< 0.7*256){
-                NonEdge(row,col,pixels);
-            }
-            else if(pixels[row+col]== 255 && gradientMagnitude[gradCol+gradRow]> 0.3*256){
-                Edge(row,col,pixels);
+            if (pixels[row + col] == WHITE_PIXEL && gradientMagnitude[gradCol + gradRow] < 0.7 * WHITE_PIXEL) {
+                NonEdge(row, col, pixels);
+            } else if (pixels[row + col] == WHITE_PIXEL && gradientMagnitude[gradCol + gradRow] > 0.3 * WHITE_PIXEL) {
+                Edge(row, col, pixels);
             }
         }
     }
     delete[] gradientMagnitude;
     delete[] gradientDirection;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 256, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, IMAGE_SIZE, IMAGE_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 }
 
 void Scene::NonEdge(size_t row, size_t col, unsigned char *pixels) {
-    pixels[row + col] = 0;
-    pixels[row + col + 1] = 0;
-    pixels[row + col + 2] = 0;
-    pixels[row+col +3]= 255;
+    pixels[row + col] = BLACK_PIXEL;
+    pixels[row + col + 1] = BLACK_PIXEL;
+    pixels[row + col + 2] = BLACK_PIXEL;
+    pixels[row + col + 3] = WHITE_PIXEL;
 }
 
 void Scene::Edge(size_t row, size_t col, unsigned char *pixels) {
-    pixels[row + col] = 255;
-    pixels[row + col + 1] = 255;
-    pixels[row + col + 2] = 255;
-    pixels[row+col +3]= 255;
+    pixels[row + col] = WHITE_PIXEL;
+    pixels[row + col + 1] = WHITE_PIXEL;
+    pixels[row + col + 2] = WHITE_PIXEL;
+    pixels[row + col + 3] = WHITE_PIXEL;
 
 }
 
 void Scene::ApplyGaussOnPixel(size_t Xcoo, size_t Ycoo, unsigned char *pixels) {
-    const size_t elmes_per_line = 256 * 4; // elements per line = 256 * "RGBA"
-    const size_t row = Ycoo * elmes_per_line;
+    const size_t lineSize = IMAGE_SIZE * 4; // elements per line = IMAGE_SIZE * "RGBA"
+    const size_t row = Ycoo * lineSize;
     const size_t col = Xcoo * 4;
     GLfloat r, g, b;
     r = pixels[row + col];
@@ -351,10 +349,10 @@ void Scene::ApplyGaussOnPixel(size_t Xcoo, size_t Ycoo, unsigned char *pixels) {
     float rCon = 0.0, gCon = 0.0, bCon = 0.0;
     for (int x = -1; x < 2; x++) {
         for (int y = -1; y < 2; y++) {
-            size_t neighborRow = row + x * elmes_per_line;
+            size_t neighborRow = row + x * lineSize;
             size_t neighborCol = col + y * 4;
-            //   if (neighborRow >= 0 && neighborRow < 256 * elmes_per_line &&
-            //       neighborCol >= 0 && neighborCol < 256 * 4) {
+            //   if (neighborRow >= 0 && neighborRow < IMAGE_SIZE * lineSize &&
+            //       neighborCol >= 0 && neighborCol < IMAGE_SIZE * 4) {
             rCon += pixels[neighborRow + neighborCol] * GaussianKernel[x + 1][y + 1];
             gCon += pixels[neighborRow + neighborCol + 1] * GaussianKernel[x + 1][y + 1];
             bCon += pixels[neighborRow + neighborCol + 2] * GaussianKernel[x + 1][y + 1];
@@ -369,26 +367,26 @@ void Scene::ApplyGaussOnPixel(size_t Xcoo, size_t Ycoo, unsigned char *pixels) {
 
 void Scene::CalculateGradientSobel(unsigned char *pixels, double *gradientMagnitude, double *gradientDirection) {
     size_t x, y; // line and column of the pixel
-    size_t valuePerLine = 256 * 4; // elements per line = 256 * "RGBA"
-    for (y = 1; y < 255; y++) {
-        for (x = 1; x < 255; x++) {
-            const size_t row = y * valuePerLine;
+    size_t LineSize = IMAGE_SIZE * 4; // elements per line = IMAGE_SIZE * "RGBA"
+    for (y = 1; y < IMAGE_SIZE - 1; y++) {
+        for (x = 1; x < IMAGE_SIZE - 1; x++) {
+            const size_t row = y * LineSize;
             const size_t col = x * 4;
             int sobelX = 0, sobelY = 0;
             for (int a = -1; a < 2; a++) {
                 for (int b = -1; b < 2; b++) {
-                    size_t neighborRow = row + a * valuePerLine;
+                    size_t neighborRow = row + a * LineSize;
                     size_t neighborCol = col + b * 4;
                     //using R values, since imagine is gray scaled
                     sobelX += pixels[neighborRow + neighborCol] * SobelHorizontalKernel[a + 1][b + 1];
                     sobelY += pixels[neighborRow + neighborCol] * SobelVerticalKernel[a + 1][b + 1];
                 }
             }
-            gradientMagnitude[y * 256 + x] = std::sqrt(sobelX * sobelX + sobelY * sobelY);
-            gradientDirection[y * 256 + x] = std::atan2(sobelY, sobelX);
-           // double j, k;
-           // k = gradientMagnitude[row + col];
-           // j = gradientDirection[row + col];
+            gradientMagnitude[y * IMAGE_SIZE + x] = std::sqrt(sobelX * sobelX + sobelY * sobelY);
+            gradientDirection[y * IMAGE_SIZE + x] = std::atan2(sobelY, sobelX);
+            // double j, k;
+            // k = gradientMagnitude[row + col];
+            // j = gradientDirection[row + col];
         }
     }
 }
