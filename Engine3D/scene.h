@@ -53,7 +53,8 @@ public:
 
 	void ReadPixel();
     void ApplyEdgeFilter(int screenNum);
-    void ApplyGaussOnPixel(size_t Xcoo, size_t Ycoo, const unsigned char *pixels);
+    void ApplyGaussOnPixel(size_t Xcoo, size_t Ycoo,  unsigned char *pixels);
+    void CalculateGradientSobel(unsigned char *pixels, double *gradientMagnitude, double *gradientDirection);
 
 	inline float GetAngle(int cameraIndx) { return cameras[cameraIndx]->GetAngle(); }
 	inline void Activate() { isActive = true; }
@@ -72,6 +73,12 @@ private:
     const float GaussianKernel[3][3]={ {1.0/ 16.0, 2.0 / 16.0, 1.0 / 16.0},
                          {2.0 / 16.0, 4.0 / 16.0, 2.0 / 16.0},
                          {1.0 / 16.0, 2.0 / 16.0, 1.0/ 16.0}};
+    const int SobelHorizontalKernel[3][3]={ {-1,0,1},
+                                       {-2,0,2},
+                                       {-1,0,1}};
+    const int SobelVerticalKernel[3][3]={ {1,2,1},
+                                       {0,0,0},
+                                       {-1,-2,-1}};
 	std::vector<Camera*> cameras;
 
 	float depth;
@@ -89,5 +96,8 @@ protected:
 
 	bool isActive;
 
+    void NonEdge(size_t row, size_t col, unsigned char *pixels);
+
+    void Edge(size_t row, size_t col, unsigned char *pixels);
 };
 
