@@ -1,5 +1,6 @@
 #include "scene.h"
 #include <iostream>
+#include <fstream>
 #include "glad/include/glad/glad.h"
 
 #define PI 3.14159265358979323846
@@ -128,6 +129,7 @@ void Scene::CustomDraw(int shaderIndx, int cameraIndx, int buffer, bool toClear,
     }
     if (screenNum == 3) {
         glViewport(IMAGE_SIZE, 0, IMAGE_SIZE, IMAGE_SIZE);
+        FloydSteinbergFilter(screenNum);
     }
     if (shapes[shapeIndex]->Is2Render()) {
         glm::mat4 Model = Normal * shapes[shapeIndex]->MakeTrans();
@@ -320,6 +322,7 @@ void Scene::ApplyEdgeFilter(int screenNum) {
     }
     delete[] gradientMagnitude;
     delete[] gradientDirection;
+    PrintToFile("img4.txt",pixels, false);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, IMAGE_SIZE, IMAGE_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 }
 
@@ -390,6 +393,62 @@ void Scene::CalculateGradientSobel(unsigned char *pixels, double *gradientMagnit
         }
     }
 }
+
+void Scene::FloydSteinbergFilter(int screenNum) {
+    Texture *tex = textures[shapes[screenNum + 1]->GetTexture()];
+    tex->Bind(tex->GetSlot());
+    GLubyte *pixels = new GLubyte[IMAGE_SIZE * IMAGE_SIZE * 4];
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    int x, y; // line and column
+    size_t LineSize = IMAGE_SIZE * 4; // elements per line = IMAGE_SIZE * "RGBA"
+    for (y = 0; y < IMAGE_SIZE - 1; y++) {
+        for (x = 1; x < IMAGE_SIZE - 1; x++) {
+            const size_t row = y * LineSize;
+            const size_t col = x * 4;
+            auto oldVal=pixels[row+col];
+            int rounderVal=(oldVal/16) *16;
+            auto error=oldVal-rounderVal;
+            ChangePixel(pixels, row+col, rounderVal);
+            ChangePixel(pixels,pixels[col+row + 4           ],pixels[col+row + 4           ] + error * 7 / 16);
+            ChangePixel(pixels,pixels[col+row - 4 + LineSize],pixels[col+row - 4 + LineSize] + error * 3 / 16);
+            ChangePixel(pixels,pixels[col+row     + LineSize],pixels[col+row     + LineSize] + error * 5 / 16);
+            ChangePixel(pixels,pixels[col+row + 4 + LineSize],pixels[col+row + 4 + LineSize] + error * 1 / 16);
+        }
+    }
+    PrintToFile("img6.txt",pixels, true);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, IMAGE_SIZE, IMAGE_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+}
+
+void Scene::ChangePixel(GLubyte *pixels, size_t index, int Val) const {
+    pixels[index]= Val;
+    pixels[index+1]= Val;
+    pixels[index+2]= Val;
+}
+void Scene::PrintToFile(std::string fileName, unsigned char* buffer, bool isGrayScale){
+
+    std::ofstream outfile(fileName);
+
+    if (outfile.is_open()) {
+        size_t arraySize = 256*256*4;
+        for (size_t i = 0; i < arraySize; i+=4) {
+            if (!isGrayScale) {
+                outfile << static_cast<int>(buffer[i] / 255); // Convert to int to print numeric value
+            } else {
+                outfile << static_cast<int>(buffer[i] / 15); // Convert to int to print numeric value
+            }
+            if (i < arraySize - 1) {
+                outfile << ","; // Add comma for all elements except the last one
+            }
+        }
+        outfile.close();
+
+        std::cout << "String successfully written to " << fileName << std::endl;
+    } else {
+        std::cerr << "Error opening the file: " << fileName << std::endl;
+    }
+
+};
 
 
 

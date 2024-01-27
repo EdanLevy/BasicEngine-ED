@@ -99,5 +99,11 @@ protected:
     void NonEdge(size_t row, size_t col, unsigned char *pixels);
 
     void Edge(size_t row, size_t col, unsigned char *pixels);
+
+    void FloydSteinbergFilter(int screenNum);
+
+    void ChangePixel(unsigned char *pixels, size_t index, int Val) const;
+
+    void PrintToFile(std::string fileName,  unsigned char* buffer, bool isGrayScale);
 };
 
