@@ -121,15 +121,16 @@ void Scene::CustomDraw(int shaderIndx, int cameraIndx, int buffer, bool toClear,
         glViewport(0, IMAGE_SIZE, IMAGE_SIZE, IMAGE_SIZE);
     }
     if (screenNum == 1) {
-        glViewport(IMAGE_SIZE, IMAGE_SIZE, IMAGE_SIZE, IMAGE_SIZE);
         ApplyEdgeFilter(screenNum);
+        glViewport(IMAGE_SIZE, IMAGE_SIZE, IMAGE_SIZE, IMAGE_SIZE);
     }
     if (screenNum == 2) {
+        HalftoningFilter(screenNum);
         glViewport(0, 0, IMAGE_SIZE, IMAGE_SIZE);
     }
     if (screenNum == 3) {
-        glViewport(IMAGE_SIZE, 0, IMAGE_SIZE, IMAGE_SIZE);
         FloydSteinbergFilter(screenNum);
+        glViewport(IMAGE_SIZE, 0, IMAGE_SIZE, IMAGE_SIZE);
     }
     if (shapes[shapeIndex]->Is2Render()) {
         glm::mat4 Model = Normal * shapes[shapeIndex]->MakeTrans();
@@ -322,8 +323,9 @@ void Scene::ApplyEdgeFilter(int screenNum) {
     }
     delete[] gradientMagnitude;
     delete[] gradientDirection;
-    PrintToFile("img4.txt",pixels, false);
+    PrintToFile("img4.txt", pixels, false);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, IMAGE_SIZE, IMAGE_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    delete[] pixels;
 }
 
 void Scene::NonEdge(size_t row, size_t col, unsigned char *pixels) {
@@ -345,10 +347,6 @@ void Scene::ApplyGaussOnPixel(size_t Xcoo, size_t Ycoo, unsigned char *pixels) {
     const size_t lineSize = IMAGE_SIZE * 4; // elements per line = IMAGE_SIZE * "RGBA"
     const size_t row = Ycoo * lineSize;
     const size_t col = Xcoo * 4;
-    GLfloat r, g, b;
-    r = pixels[row + col];
-    g = pixels[row + col + 1];
-    b = pixels[row + col + 2];
     float rCon = 0.0, gCon = 0.0, bCon = 0.0;
     for (int x = -1; x < 2; x++) {
         for (int y = -1; y < 2; y++) {
@@ -368,7 +366,7 @@ void Scene::ApplyGaussOnPixel(size_t Xcoo, size_t Ycoo, unsigned char *pixels) {
 
 }
 
-void Scene::CalculateGradientSobel(unsigned char *pixels, double *gradientMagnitude, double *gradientDirection) {
+void Scene::CalculateGradientSobel(const unsigned char *pixels, double *gradientMagnitude, double *gradientDirection) {
     size_t x, y; // line and column of the pixel
     size_t LineSize = IMAGE_SIZE * 4; // elements per line = IMAGE_SIZE * "RGBA"
     for (y = 1; y < IMAGE_SIZE - 1; y++) {
@@ -387,9 +385,6 @@ void Scene::CalculateGradientSobel(unsigned char *pixels, double *gradientMagnit
             }
             gradientMagnitude[y * IMAGE_SIZE + x] = std::sqrt(sobelX * sobelX + sobelY * sobelY);
             gradientDirection[y * IMAGE_SIZE + x] = std::atan2(sobelY, sobelX);
-            // double j, k;
-            // k = gradientMagnitude[row + col];
-            // j = gradientDirection[row + col];
         }
     }
 }
@@ -405,33 +400,34 @@ void Scene::FloydSteinbergFilter(int screenNum) {
         for (x = 1; x < IMAGE_SIZE - 1; x++) {
             const size_t row = y * LineSize;
             const size_t col = x * 4;
-            auto oldVal=pixels[row+col];
-            int rounderVal=(oldVal/16) *16;
-            auto error=oldVal-rounderVal;
-            ChangePixel(pixels, row+col, rounderVal);
-            ChangePixel(pixels,pixels[col+row + 4           ],pixels[col+row + 4           ] + error * 7 / 16);
-            ChangePixel(pixels,pixels[col+row - 4 + LineSize],pixels[col+row - 4 + LineSize] + error * 3 / 16);
-            ChangePixel(pixels,pixels[col+row     + LineSize],pixels[col+row     + LineSize] + error * 5 / 16);
-            ChangePixel(pixels,pixels[col+row + 4 + LineSize],pixels[col+row + 4 + LineSize] + error * 1 / 16);
+            auto oldVal = pixels[row + col];
+            int rounderVal = (oldVal / 16) * 16;
+            auto error = oldVal - rounderVal;
+            ChangePixel(pixels, row + col, rounderVal);
+            ChangePixel(pixels, pixels[col + row + 4], pixels[col + row + 4] + error * 7 / 16);
+            ChangePixel(pixels, pixels[col + row - 4 + LineSize], pixels[col + row - 4 + LineSize] + error * 3 / 16);
+            ChangePixel(pixels, pixels[col + row + LineSize], pixels[col + row + LineSize] + error * 5 / 16);
+            ChangePixel(pixels, pixels[col + row + 4 + LineSize], pixels[col + row + 4 + LineSize] + error * 1 / 16);
         }
     }
-    PrintToFile("img6.txt",pixels, true);
+    PrintToFile("img6.txt", pixels, true);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, IMAGE_SIZE, IMAGE_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
 }
 
-void Scene::ChangePixel(GLubyte *pixels, size_t index, int Val) const {
-    pixels[index]= Val;
-    pixels[index+1]= Val;
-    pixels[index+2]= Val;
+void Scene::ChangePixel(GLubyte *pixels, size_t index, int Val) {
+    pixels[index] = Val;
+    pixels[index + 1] = Val;
+    pixels[index + 2] = Val;
 }
-void Scene::PrintToFile(std::string fileName, unsigned char* buffer, bool isGrayScale){
+
+void Scene::PrintToFile(const std::string &fileName, const unsigned char *buffer, bool isGrayScale) {
 
     std::ofstream outfile(fileName);
 
     if (outfile.is_open()) {
-        size_t arraySize = 256*256*4;
-        for (size_t i = 0; i < arraySize; i+=4) {
+        size_t arraySize = 256 * 256 * 4;
+        for (size_t i = 0; i < arraySize; i += 4) {
             if (!isGrayScale) {
                 outfile << static_cast<int>(buffer[i] / 255); // Convert to int to print numeric value
             } else {
@@ -448,8 +444,98 @@ void Scene::PrintToFile(std::string fileName, unsigned char* buffer, bool isGray
         std::cerr << "Error opening the file: " << fileName << std::endl;
     }
 
+}
+
+void Scene::HalftoningFilter(int screenNum) {
+    Texture *tex = textures[shapes[screenNum + 1]->GetTexture()];
+    tex->Bind(tex->GetSlot());
+    GLubyte *pixels = new GLubyte[IMAGE_SIZE * IMAGE_SIZE * 4];
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    int x, y; // line and column
+    size_t LineSize = IMAGE_SIZE * 4; // elements per line = IMAGE_SIZE * "RGBA"
+
+    auto *pixelsIntencityLevels = new int[IMAGE_SIZE * IMAGE_SIZE];
+    for (y = 0; y < IMAGE_SIZE - 1; y++) {
+        for (x = 1; x < IMAGE_SIZE - 1; x++) {
+            const size_t row = y * LineSize;
+            const size_t col = x * 4;
+            pixelsIntencityLevels[x + y * IMAGE_SIZE] = getPixelIntencity(pixels[row + col]);
+        }
+    }
+
+    auto *halfTonePixels = new GLubyte[(IMAGE_SIZE * 2) * (IMAGE_SIZE * 2) *
+                                       4]; //every pixel becomes 2x2 so the image size is 2 times bigger and all pixels have 4 channels
+    for (y = 0; y < IMAGE_SIZE; y++) {
+        for (x = 0; x < IMAGE_SIZE; x++) {
+
+            int currentIntencityLevel = pixelsIntencityLevels[x + y * IMAGE_SIZE];
+            ApplyHalftonePatternOnPixel(currentIntencityLevel, x * 2, y * 2,
+                                        halfTonePixels); // apply the patten on every pixel, since the image size is 2 times bigger we send the coordinates of the pixel times 2.
+        }
+    }
+
+    PrintToFile("img5.txt", pixels, false);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, IMAGE_SIZE * 2, IMAGE_SIZE * 2, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                 halfTonePixels);
+    delete[] pixelsIntencityLevels;
+    delete[] halfTonePixels;
+    delete[] pixels;
+
 };
 
+void Scene::ApplyHalftonePatternOnPixel(int level, size_t x, size_t y, unsigned char *pixels) {
+    size_t lineSize = IMAGE_SIZE * 2 * 4; // elements per line = IMAGE_SIZE * "RGBA" and the size is 512 meaning twice the size
+    const size_t row = y * lineSize;
+    const size_t col = x * 4;
+    switch (level) {
+        case 0:
+            ChangePixel(pixels, row + col, BLACK_PIXEL); //top left pixel in pattern
+            ChangePixel(pixels, row + (col + 4), BLACK_PIXEL); //top right pixel in pattern
+            ChangePixel(pixels, row + lineSize + col, BLACK_PIXEL); //bottom left pixel in pattern
+            ChangePixel(pixels, (row + lineSize) + (col + 4), BLACK_PIXEL); // bottom right pixel in pattern
+            break;
+        case 1:
+            ChangePixel(pixels, row + col, BLACK_PIXEL); //top left pixel in pattern
+            ChangePixel(pixels, row + (col + 4), BLACK_PIXEL); //top right pixel in pattern
+            ChangePixel(pixels, row + lineSize + col, BLACK_PIXEL); //bottom left pixel in pattern
+            ChangePixel(pixels, (row + lineSize) + (col + 4), WHITE_PIXEL); // bottom right pixel in pattern
+            break;
+        case 2:
+            ChangePixel(pixels, row + col, BLACK_PIXEL); //top left pixel in pattern
+            ChangePixel(pixels, row + (col + 4), WHITE_PIXEL); //top right pixel in pattern
+            ChangePixel(pixels, row + lineSize + col, BLACK_PIXEL); //bottom left pixel in pattern
+            ChangePixel(pixels, (row + lineSize) + (col + 4), WHITE_PIXEL); // bottom right pixel in pattern
+            break;
+        case 3:
+            ChangePixel(pixels, row + col, BLACK_PIXEL); //top left pixel in pattern
+            ChangePixel(pixels, row + (col + 4), WHITE_PIXEL); //top right pixel in pattern
+            ChangePixel(pixels, row + lineSize + col, WHITE_PIXEL); //bottom left pixel in pattern
+            ChangePixel(pixels, (row + lineSize) + (col + 4), WHITE_PIXEL); // bottom right pixel in pattern
+            break;
+        case 4:
+            ChangePixel(pixels, row + col, WHITE_PIXEL); //top left pixel in pattern
+            ChangePixel(pixels, row + (col + 4), WHITE_PIXEL); //top right pixel in pattern
+            ChangePixel(pixels, row + lineSize + col, WHITE_PIXEL); //bottom left pixel in pattern
+            ChangePixel(pixels, (row + lineSize) + (col + 4), WHITE_PIXEL); // bottom right pixel in pattern
+            break;
+        default:
+            break;
+    }
+}
 
 
+int getPixelIntencity(const unsigned char pixelValue) {
+    double intencityLevel = pixelValue / 255.0;
 
+    if (intencityLevel < 0.2) {
+        return 0;
+    } else if (intencityLevel < 0.4) {
+        return 1;
+    } else if (intencityLevel < 0.6) {
+        return 2;
+    } else if (intencityLevel < 0.8) {
+        return 3;
+    } else {
+        return 4;
+    }
+}

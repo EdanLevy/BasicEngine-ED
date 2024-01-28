@@ -5,7 +5,7 @@
 #include "VertexArray.hpp"
 #include <vector>
 
-
+int getPixelIntencity(const unsigned char pixelValue);
 
 class Scene : public MovableGLM
 {
@@ -54,7 +54,7 @@ public:
 	void ReadPixel();
     void ApplyEdgeFilter(int screenNum);
     void ApplyGaussOnPixel(size_t Xcoo, size_t Ycoo,  unsigned char *pixels);
-    void CalculateGradientSobel(unsigned char *pixels, double *gradientMagnitude, double *gradientDirection);
+    void CalculateGradientSobel(const unsigned char *pixels, double *gradientMagnitude, double *gradientDirection);
 
 	inline float GetAngle(int cameraIndx) { return cameras[cameraIndx]->GetAngle(); }
 	inline void Activate() { isActive = true; }
@@ -96,14 +96,18 @@ protected:
 
 	bool isActive;
 
-    void NonEdge(size_t row, size_t col, unsigned char *pixels);
+    static void NonEdge(size_t row, size_t col, unsigned char *pixels);
 
-    void Edge(size_t row, size_t col, unsigned char *pixels);
+    static void Edge(size_t row, size_t col, unsigned char *pixels);
 
     void FloydSteinbergFilter(int screenNum);
+    
+    void HalftoningFilter(int screenNum);
 
-    void ChangePixel(unsigned char *pixels, size_t index, int Val) const;
+    static void ChangePixel(unsigned char *pixels, size_t index, int Val) ;
 
-    void PrintToFile(std::string fileName,  unsigned char* buffer, bool isGrayScale);
+    static void PrintToFile(const std::string& fileName,  const unsigned char* buffer, bool isGrayScale);
+
+    static void ApplyHalftonePatternOnPixel(int level, size_t x, size_t y, unsigned char *pixels);
 };
 
