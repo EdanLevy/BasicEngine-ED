@@ -284,7 +284,6 @@ void Scene::ApplyEdgeFilter(int screenNum) {
     auto *gradientMagnitude = new double[IMAGE_SIZE * IMAGE_SIZE]; //single value for each pixel
     auto *gradientDirection = new double[IMAGE_SIZE * IMAGE_SIZE]; //single value for each pixel
     CalculateGradientSobel(pixels, gradientMagnitude, gradientDirection);
-    const double pi = 3.14159265358979323846;
     for (y = 1; y < IMAGE_SIZE - 1; y++) {
         for (x = 1; x < IMAGE_SIZE - 1; x++) {
             const size_t row = y * lineSize;
@@ -352,12 +351,9 @@ void Scene::ApplyGaussOnPixel(size_t Xcoo, size_t Ycoo, unsigned char *pixels) {
         for (int y = -1; y < 2; y++) {
             size_t neighborRow = row + x * lineSize;
             size_t neighborCol = col + y * 4;
-            //   if (neighborRow >= 0 && neighborRow < IMAGE_SIZE * lineSize &&
-            //       neighborCol >= 0 && neighborCol < IMAGE_SIZE * 4) {
             rCon += pixels[neighborRow + neighborCol] * GaussianKernel[x + 1][y + 1];
             gCon += pixels[neighborRow + neighborCol + 1] * GaussianKernel[x + 1][y + 1];
             bCon += pixels[neighborRow + neighborCol + 2] * GaussianKernel[x + 1][y + 1];
-            //    }
         }
     }
     pixels[row + col] = rCon;

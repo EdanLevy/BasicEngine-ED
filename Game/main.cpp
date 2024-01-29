@@ -1,5 +1,4 @@
 #include "InputManager.h"
-// #include "../DisplayGLFW/display.h"
 #include "game.h"
 #include "../res/includes/glm/glm.hpp"
 
@@ -27,31 +26,24 @@ int main(int argc, char* argv[])
 
 	scn->AddTexture("../res/textures/lena256.jpg", false);
 	scn->SetShapeTex(1, 0);
-  //  scn->SetShapeShader(1,1);
 	scn->CustomDraw(1, 0, scn->BACK, true, false,0,1);
-    //scn->ApplyEdgeFilter(0);
 
     scn->AddTexture("../res/textures/lena256.jpg", false);
     scn->SetShapeTex(2, 1);
-    //  scn->SetShapeShader(2,2);
     scn->CustomDraw(1, 0, scn->BACK, false, false, 1,2);
+    
     scn->AddTexture("../res/textures/lena256.jpg", false);
     scn->SetShapeTex(3, 2);
-   // scn->SetShapeShader(3,3);
     scn->CustomDraw(1, 0, scn->BACK, false, false, 2,3);
 
     scn->AddTexture("../res/textures/lena256.jpg", false);
     scn->SetShapeTex(4, 3);
-   // scn->SetShapeShader(4,4);
     scn->CustomDraw(1, 0, scn->BACK, false, false, 3,4);
 
     scn->Motion();
 	display.SwapBuffers();
 	while (!display.CloseWindow())
 	{
-		//scn->Draw(1,0,scn->BACK,true,false);
-		//scn->Motion();
-		//display.SwapBuffers();
 		display.PollEvents();
 
 	}
