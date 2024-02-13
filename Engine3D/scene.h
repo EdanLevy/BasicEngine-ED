@@ -10,7 +10,8 @@ class Scene : public MovableGLM
 {
 
 public:
-	enum axis{xAxis,yAxis,zAxis};
+    void Render();
+    enum axis{xAxis,yAxis,zAxis};
 	enum transformations{xTranslate, yTranslate, zTranslate, xRotate, yRotate, zRotate, xScale, yScale, zScale, xCameraTranslate, yCameraTranslate, zCameraTranslate};
 	enum modes{POINTS, LINES, LINE_LOOP, LINE_STRIP, TRIANGLES, TRIANGLE_STRIP, TRIANGLE_FAN, QUADS};
 	enum buffers{COLOR, DEPTH, STENCIL, BACK, FRONT, ACCUM, NONE };
@@ -65,7 +66,7 @@ public:
 	
 private:	
 	
-	std::vector<Camera*> cameras; 
+	std::vector<Camera*> cameras;
 
 	float depth;
 	int xold, yold,xrel, yrel;
@@ -81,5 +82,6 @@ protected:
 	int pickedShape;
 	
 	bool isActive;
+
 };
 

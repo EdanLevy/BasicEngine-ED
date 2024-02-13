@@ -1,7 +1,7 @@
 #include "scene.h"
 #include "glad/include/glad/glad.h"
 #include <iostream>
-
+#define IMAGE_SIZE 800
 	static void printMat(const glm::mat4 mat)
 	{
 		printf(" matrix: \n");
@@ -92,19 +92,19 @@
 			else
 				Clear(0,0,0,0);
 		}
-
+        Render();
 		for (unsigned int i=0; i<shapes.size();i++)
 		{
 			if(shapes[i]->Is2Render())
 			{
 				glm::mat4 Model = Normal * shapes[i]->MakeTrans();
-				
+
 				if(shaderIndx > 0)
 				{
 					Update(MVP,Model,shapes[i]->GetShader());
-					shapes[i]->Draw(shaders,textures,false);	
+					shapes[i]->Draw(shaders,textures,false);
 				}
-				else 
+				else
 				{ //picking
 					Update(MVP,Model,0);
 					shapes[i]->Draw(shaders,textures,true);
@@ -113,6 +113,30 @@
 		}
 		pickedShape = p;
 	}
+    void Scene::Render(){
+       // glEnable(GL_DEPTH_TEST);
+       // glm::mat4 Normal = MakeTrans();
+//
+       // glm::mat4 MVP = cameras[cameraIndx]->GetViewProjection()*glm::inverse(cameras[cameraIndx]->MakeTrans());
+        Texture *tex = textures[shapes[0]->GetTexture()];
+        tex->Bind(tex->GetSlot());
+        GLubyte *pixels = new GLubyte[IMAGE_SIZE * IMAGE_SIZE * 4];
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+        int x, y; // line and column
+        size_t lineSize = IMAGE_SIZE * 4; // elements per line = IMAGE_SIZE * "RGBA"
+        for (y = 1; y < IMAGE_SIZE - 1; y++) {
+            for (x = 1; x < IMAGE_SIZE - 1; x++) {
+                const size_t row = y * lineSize;
+                const size_t col = x * 4;
+                pixels[row + col] = 255;
+                pixels[row + col + 1] = 0;
+                pixels[row + col + 2] = 0;
+                pixels[row + col + 3] = 255;
+            }
+        }
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, IMAGE_SIZE, IMAGE_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+        delete[] pixels;
+}
 
 	void Scene::MoveCamera(int cameraIndx,int type,float amt)
 	{

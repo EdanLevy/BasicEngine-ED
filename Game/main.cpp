@@ -18,16 +18,16 @@ int main(int argc,char *argv[])
 	Init(display);
 	
 	scn->Init();
-
+   // scn->Draw(1,0,scn->BACK,true,false);
 	display.SetScene(scn);
+    //scn->Render();
 
-	while(!display.CloseWindow())
+    //scn->Draw(1,0,scn->BACK,true,false);
+    scn->Motion();
+    display.SwapBuffers();
+    while(!display.CloseWindow())
 	{
-		scn->Draw(1,0,scn->BACK,true,false);
-		scn->Motion();
-		display.SwapBuffers();
-		display.PollEvents();	
-			
+		display.PollEvents();
 	}
 	delete scn;
 	return 0;
