@@ -1,7 +1,6 @@
 #include "scene.h"
-#include "glad/include/glad/glad.h"
 #include <iostream>
-#define IMAGE_SIZE 800
+#include "glad/include/glad/glad.h"
 	static void printMat(const glm::mat4 mat)
 	{
 		printf(" matrix: \n");
@@ -92,7 +91,7 @@
 			else
 				Clear(0,0,0,0);
 		}
-        Render();
+        //Render();
 		for (unsigned int i=0; i<shapes.size();i++)
 		{
 			if(shapes[i]->Is2Render())
@@ -113,31 +112,6 @@
 		}
 		pickedShape = p;
 	}
-    void Scene::Render(){
-       // glEnable(GL_DEPTH_TEST);
-       // glm::mat4 Normal = MakeTrans();
-//
-       // glm::mat4 MVP = cameras[cameraIndx]->GetViewProjection()*glm::inverse(cameras[cameraIndx]->MakeTrans());
-        Texture *tex = textures[shapes[0]->GetTexture()];
-        tex->Bind(tex->GetSlot());
-        GLubyte *pixels = new GLubyte[IMAGE_SIZE * IMAGE_SIZE * 4];
-        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-        int x, y; // line and column
-        size_t lineSize = IMAGE_SIZE * 4; // elements per line = IMAGE_SIZE * "RGBA"
-        for (y = 1; y < IMAGE_SIZE - 1; y++) {
-            for (x = 1; x < IMAGE_SIZE - 1; x++) {
-                const size_t row = y * lineSize;
-                const size_t col = x * 4;
-                pixels[row + col] = 255;
-                pixels[row + col + 1] = 0;
-                pixels[row + col + 2] = 0;
-                pixels[row + col + 3] = 255;
-            }
-        }
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, IMAGE_SIZE, IMAGE_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-        delete[] pixels;
-}
-
 	void Scene::MoveCamera(int cameraIndx,int type,float amt)
 	{
 		switch (type)
@@ -288,6 +262,79 @@
 			delete tex;
 		}
 
+}
+void Scene::Render(int widthSize, int  heightSize, ParsedScene& ps)
+{
+    int width, height;
+    size_t lineSize = widthSize * 4; // elements per line = SCREEN_SIZE * "RGBA"
+    for (height = 0; height < heightSize; height++) {
+        for (width = 0; width < widthSize; width++) {
+            glm::vec2 coord= {-1,-1};
+            const size_t row = height * lineSize;
+            const size_t col = width * 4;
+           // glm::vec2 coord = { (float)width / (float)SCREEN_SIZE, (float)height / (float)SCREEN_SIZE }; // 0->1
+         //   coord = coord * 2.0f - 1.0f; // 0 -> 1 to -1 -> 1
+            coord.x+=((2.0f/widthSize)/2.0f)+(2.0f/widthSize)*height;
+            coord.y+=((2.0f/heightSize)/2.0f)+(2.0f/heightSize)*width;
+
+            screen[(height +width*widthSize)*4] = PerPixel(coord, ps);
+            }
+        }
+}
+
+//GLubyte Scene::PerPixel(glm::vec2 coord)
+//{
+//    glm::vec3 cameraPosition(0.0f, 0.0f, 0.0f);
+//
+//    glm::vec3 screenPoint(coord.x, coord.y, 0.0f);
+//
+//    // Calculate the ray direction from the camera position to the screen point
+//    glm::vec3 rayDirection = glm::normalize(screenPoint - cameraPosition);
+//    float radius = 1.0f;
+//    float a = glm::dot(rayDirection, rayDirection);
+//    float b = 2.0f * glm::dot(cameraPosition, rayDirection);
+//    float c = glm::dot(cameraPosition, cameraPosition) - radius * radius;
+//
+//    float discriminant = b * b - 4.0f * a * c;
+//
+//    // If discriminant is non-negative, the ray intersects with the sphere
+//    if (discriminant >= 0.0f)
+//        return 255;
+//
+//    // Otherwise, the ray misses the sphere
+//    return 0;
+//}
+unsigned char Scene::PerPixel(glm::vec2 coord, ParsedScene& ps)
+{
+
+    // go throgh all spheres , render sphere
+    // go through all planes , render plane
+
+
+    glm::vec3 cameraCoord= {0.0,0.0,2.0};
+    glm::vec3 sphereCenter={0.5f,0.0f,2.0f};
+    float sphereRadius=0.5f;
+    // Camera position is assumed to be at (0, 0, 0)
+  //  glm::vec3 rayOrigin(0.0f, 0.0f, 0.0f);
+
+    // Convert pixel coordinates to normalized device coordinates (NDC)
+    glm::vec3 rayDirection(coord.x - cameraCoord.x, coord.y -cameraCoord.y, 0.0f - cameraCoord.z);
+  //      rayDirection = glm::normalize(rayDirection);
+    // Calculate coefficients for the quadratic equation
+    float a = glm::dot(rayDirection, rayDirection);
+    float b = 2.0f * glm::dot(cameraCoord, rayDirection);
+    float c = glm::dot(cameraCoord, cameraCoord) - (sphereRadius * sphereRadius);
+
+    // Calculate the discriminant
+    float discriminant = b * b - 4.0f * a * c;
+    // Check for intersection
+    if (discriminant >= 0) {
+    //         std::cout << "discriminant: " << discriminant << std::endl;
+            return 255;
+        }
+
+    // No intersection
+    return 0;
 }
 
 

@@ -25,7 +25,13 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/res/includes/glad)
 
 
 add_library(Display ${DISPLAY})
-add_library(Engine ${ENGINE})
+add_library(Engine ${ENGINE}
+        Engine3D/SceneParser.cpp
+        Engine3D/SceneParser.h
+        Engine3D/Sphere.cpp
+        Engine3D/Sphere.h
+        Engine3D/Plane.cpp
+        Engine3D/Plane.h)
 
 
 add_executable(${PROJ_NAME} ${GAME})

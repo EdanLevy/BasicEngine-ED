@@ -1,8 +1,8 @@
 #include "game.h"
-#include "glad/glad.h"
+//#include "glad/glad.h"
 #include <iostream>
 #include <glm/gtc/matrix_transform.hpp>
-#define IMAGE_SIZE 800
+#define SCREEN_SIZE 800
 
 static void printMat(const glm::mat4 mat)
 {
@@ -28,29 +28,27 @@ void Game::Init()
 
 	AddShader("../res/shaders/pickingShader");	
 	AddShader("../res/shaders/basicShader");
- //   AddTexture(IMAGE_SIZE,IMAGE_SIZE,pixels);
 
-    GLubyte *pixels = new GLubyte[IMAGE_SIZE * IMAGE_SIZE * 4];
-   int x, y; // line and column
-   size_t lineSize = IMAGE_SIZE * 4; // elements per line = IMAGE_SIZE * "RGBA"
-   for (y = 0; y < IMAGE_SIZE; y++) {
-       for (x = 0; x < IMAGE_SIZE; x++) {
-           const size_t row = y * lineSize;
-           const size_t col = x * 4;
-           pixels[row + col] = 255;
-           pixels[row + col + 1] = 255;
-           pixels[row + col + 2] = 255;
-           pixels[row + col + 3] = 255;
-       }
-   }
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, IMAGE_SIZE, IMAGE_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-	AddShape(Plane,-1,TRIANGLES);
-	
+
+    AddShape(Plane,-1,TRIANGLES);
+    screen = (unsigned  char *)malloc(SCREEN_SIZE * SCREEN_SIZE * 4);
+    int width, height;
+    size_t lineSize = SCREEN_SIZE * 4; // elements per line = SCREEN_SIZE * "RGBA"
+    for (height = 0; height < SCREEN_SIZE; height++) {
+        for (width = 0; width < SCREEN_SIZE; width++) {
+            const size_t row = height * lineSize;
+            const size_t col = width * 4;
+            screen[row + col] = 255;
+            screen[row + col + 1] = 255;
+            screen[row + col + 2] = 255;
+            //screen[row + col + 3] = 255; //NOTE: VALUE IS SET TO 1 IN SHADER, THIS VALUE IS OVERRIDDEN
+        }
+    }
 	pickedShape = 0;
 	
-	//SetShapeTex(0,0);
+	SetShapeTex(0,0);
 	MoveCamera(0,zTranslate,10);
-	pickedShape = -1;
+	//pickedShape = -1;
 	
 	//ReadPixel(); //uncomment when you are reading from the z-buffer
 }

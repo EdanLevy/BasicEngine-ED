@@ -3,6 +3,9 @@
 #include "shape.h"
 #include "camera.h"
 #include "VertexArray.hpp"
+#include "Sphere.h"
+#include "Plane.h"
+#include "SceneParser.h"
 #include <vector>
 
 
@@ -10,7 +13,19 @@ class Scene : public MovableGLM
 {
 
 public:
-    void Render();
+    unsigned  char *screen; //Glubyte throws errors in scene.cpp, and I am too tired for that
+    void Render(int width, int  height, ParsedScene& ps);
+   // glm::vec3 cameraCoord; //range -1 to 1
+   // struct sphere{
+   //     float r;
+   //     glm::vec3 coord;
+   // };
+   // struct plane{
+   //     float a,b,c,d;
+   // };
+    void RenderSphere(Sphere sphere);
+    void RenderPlame(Plane sphere);
+    glm::vec4 ambient;
     enum axis{xAxis,yAxis,zAxis};
 	enum transformations{xTranslate, yTranslate, zTranslate, xRotate, yRotate, zRotate, xScale, yScale, zScale, xCameraTranslate, yCameraTranslate, zCameraTranslate};
 	enum modes{POINTS, LINES, LINE_LOOP, LINE_STRIP, TRIANGLES, TRIANGLE_STRIP, TRIANGLE_FAN, QUADS};
@@ -82,6 +97,9 @@ protected:
 	int pickedShape;
 	
 	bool isActive;
+
+    unsigned char PerPixel(glm::vec2 coord, ParsedScene& ps);
+
 
 };
 
