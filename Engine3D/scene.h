@@ -16,7 +16,7 @@ class Scene : public MovableGLM
 
 public:
     unsigned  char *screen; //Glubyte throws errors in scene.cpp, and I am too tired for that
-    void Render(int width, int  height, ParsedScene& ps);
+    void Render(int width, int  height, const ParsedScene& ps);
    // glm::vec3 cameraCoord; //range -1 to 1
    // struct sphere{
    //     float r;
@@ -82,7 +82,7 @@ public:
 	inline void SetShapeShader(int shpIndx,int shdrIndx){shapes[shpIndx]->SetShader(shdrIndx);} 
 	
 private:	
-	
+    static float isCheckersDiffusionDistribution(const glm::vec3 coord);
 	std::vector<Camera*> cameras;
 
 	float depth;
@@ -100,7 +100,7 @@ protected:
 	
 	bool isActive;
 
-    unsigned char PerPixel(glm::vec2 coord, ParsedScene& ps);
+    glm::vec3 PerPixel(const glm::vec2& coord, const ParsedScene& ps);
 
 
 };

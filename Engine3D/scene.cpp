@@ -263,79 +263,78 @@
 		}
 
 }
-void Scene::Render(int widthSize, int  heightSize, ParsedScene& ps)
+/**
+ * loops over the screen and for each pixal, renders it according to the parsed scene in ps
+ * @param widthSize screen width
+ * @param heightSize screen hight
+ * @param ps parsed scene
+ */
+void Scene::Render(int widthSize, int  heightSize, const ParsedScene& ps)
 {
     int width, height;
-    size_t lineSize = widthSize * 4; // elements per line = SCREEN_SIZE * "RGBA"
     for (height = 0; height < heightSize; height++) {
         for (width = 0; width < widthSize; width++) {
             glm::vec2 coord= {-1,-1};
-            const size_t row = height * lineSize;
-            const size_t col = width * 4;
-           // glm::vec2 coord = { (float)width / (float)SCREEN_SIZE, (float)height / (float)SCREEN_SIZE }; // 0->1
-         //   coord = coord * 2.0f - 1.0f; // 0 -> 1 to -1 -> 1
             coord.x+=((2.0f/widthSize)/2.0f)+(2.0f/widthSize)*height;
             coord.y+=((2.0f/heightSize)/2.0f)+(2.0f/heightSize)*width;
-
-            screen[(height +width*widthSize)*4] = PerPixel(coord, ps);
+            glm::vec3 pixelVal= PerPixel(coord, ps);
+            screen[((height +width*widthSize)*4)] = (int)(pixelVal.r*255);
+            screen[((height +width*widthSize)*4)+1] = (int)(pixelVal.g*255);
+            screen[((height +width*widthSize)*4)+2] = (int)(pixelVal.b*255);
             }
         }
 }
 
-//GLubyte Scene::PerPixel(glm::vec2 coord)
-//{
-//    glm::vec3 cameraPosition(0.0f, 0.0f, 0.0f);
-//
-//    glm::vec3 screenPoint(coord.x, coord.y, 0.0f);
-//
-//    // Calculate the ray direction from the camera position to the screen point
-//    glm::vec3 rayDirection = glm::normalize(screenPoint - cameraPosition);
-//    float radius = 1.0f;
-//    float a = glm::dot(rayDirection, rayDirection);
-//    float b = 2.0f * glm::dot(cameraPosition, rayDirection);
-//    float c = glm::dot(cameraPosition, cameraPosition) - radius * radius;
-//
-//    float discriminant = b * b - 4.0f * a * c;
-//
-//    // If discriminant is non-negative, the ray intersects with the sphere
-//    if (discriminant >= 0.0f)
-//        return 255;
-//
-//    // Otherwise, the ray misses the sphere
-//    return 0;
-//}
-unsigned char Scene::PerPixel(glm::vec2 coord, ParsedScene& ps)
+/**
+ * given a pixel vector in range (-1,-1) to (1,1) on the screen, colors it according to the scene parsed in ps
+ * @param coord pixel on the screen
+ * @param ps parsed scene data
+ * @return vector for rgb color in range 0-1 (need to multiply it by 255 for real colors)
+ */
+glm::vec3 Scene::PerPixel(const glm::vec2& coord, const ParsedScene& ps)
 {
+    glm::vec3 pixelVal={0.0f,0.0f,0.0f}; //rgb values, returned object. defaults to black
 
-    // go throgh all spheres , render sphere
-    // go through all planes , render plane
+    //glm::vec3 cameraCoord= {0.0f,0.0f,2.0f};
+    glm::vec3 cameraCoord= ps.cameraCoord;
+    for (const auto & sphere : ps.spheres) {
+        //glm::vec3 sphereCenter={0.0f,0.0f,0.0f};
+        glm::vec3 sphereCenter=sphere.coord;
+        float sphereRadius=sphere.radius;
+        //  glm::vec3 rayOrigin(0.0f, 0.0f, 0.0f);
+        // Convert pixel coordinates to normalized device coordinates (NDC)
+        glm::vec3 rayDirection(coord.x - cameraCoord.x, coord.y -cameraCoord.y, 0.0f - cameraCoord.z);
+        //      rayDirection = glm::normalize(rayDirection);
+        // Calculate coefficients for the quadratic equation
+        float a = glm::dot(rayDirection, rayDirection);
+        float b = 2.0f * glm::dot(cameraCoord+sphereCenter, rayDirection);
+        float c = glm::dot(cameraCoord+sphereCenter, cameraCoord+sphereCenter) - (sphereRadius * sphereRadius);
 
-
-    glm::vec3 cameraCoord= {0.0,0.0,2.0};
-    glm::vec3 sphereCenter={0.5f,0.0f,2.0f};
-    float sphereRadius=0.5f;
-    // Camera position is assumed to be at (0, 0, 0)
-  //  glm::vec3 rayOrigin(0.0f, 0.0f, 0.0f);
-
-    // Convert pixel coordinates to normalized device coordinates (NDC)
-    glm::vec3 rayDirection(coord.x - cameraCoord.x, coord.y -cameraCoord.y, 0.0f - cameraCoord.z);
-  //      rayDirection = glm::normalize(rayDirection);
-    // Calculate coefficients for the quadratic equation
-    float a = glm::dot(rayDirection, rayDirection);
-    float b = 2.0f * glm::dot(cameraCoord, rayDirection);
-    float c = glm::dot(cameraCoord, cameraCoord) - (sphereRadius * sphereRadius);
-
-    // Calculate the discriminant
-    float discriminant = b * b - 4.0f * a * c;
-    // Check for intersection
-    if (discriminant >= 0) {
-    //         std::cout << "discriminant: " << discriminant << std::endl;
-            return 255;
+        // Calculate the discriminant
+        float discriminant = b * b - 4.0f * a * c;
+        // Check for intersection
+        if (discriminant >= 0) {
+            pixelVal+=ps.ambientLight; //TODO: IN FUTURE ASSURE THIS IS ONLY APPLIED ONCE
+            float nearestHit= (-b - glm::sqrt(discriminant)) / (2.0f*a); //solve quadratic equation, since a is positive, -b -sqrt will always be smaller
+            glm::vec3 hitPoint= cameraCoord - sphereCenter + rayDirection* nearestHit;
+            glm::vec3 normal= glm::normalize(hitPoint);
+            for(const auto & light : ps.directionalLights) {
+                glm::vec3 lightDir = glm::normalize(light - sphereCenter);
+                float shade = glm::max(glm::dot(normal, lightDir), 0.0f);
+                pixelVal+= sphere.color * shade;
+            }
         }
-
-    // No intersection
-    return 0;
+    }
+    return pixelVal;
 }
+/*
+ *  scalar for coord in calculation determines checkers size, bigger scalar smaller checkers
+ */
+float Scene::isCheckersDiffusionDistribution( glm::vec3 coord){
+    coord = coord * 0.5f +1.0f;
+    return (int)(10* coord.x) % 2 == (int)( 10* coord.y) % 2 ? 0.5f : 1.5f;
+}
+
 
 
 	 

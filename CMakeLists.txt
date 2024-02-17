@@ -31,7 +31,8 @@ add_library(Engine ${ENGINE}
         Engine3D/Sphere.cpp
         Engine3D/Sphere.h
         Engine3D/Plane.cpp
-        Engine3D/Plane.h)
+        Engine3D/Plane.h
+)
 
 
 add_executable(${PROJ_NAME} ${GAME})

@@ -2,7 +2,7 @@
 // #include "../DisplayGLFW/display.h"
 #include "game.h"
 #include "../res/includes/glm/glm.hpp"
-#define SCREEN_SIZE 800
+#define SCREEN_SIZE 512
 int main(int argc,char *argv[])
 {
 	const int DISPLAY_WIDTH = SCREEN_SIZE;
@@ -16,9 +16,16 @@ int main(int argc,char *argv[])
 	Display display(DISPLAY_WIDTH, DISPLAY_HEIGHT, "OpenGL");
 	
 	Init(display);
-	
+    ParsedScene ps;
+    ps.AddSphere( Sphere(0.5f,glm::vec3 {-0.7f,-0.7f,1.0f},glm::vec3 {0.0f,1.0f,1.0f} ));
+    ps.AddSphere( Sphere(0.5f,glm::vec3 {0.6f,-0.5f,1.3f},glm::vec3 {1.0f,0.0f,0.0f} ));
+   // ps.AddSphere( Sphere(0.5f,glm::vec3 {0.0f,0.9f,4.0f},glm::vec3 {1.0f,0.0f,0.0f} ));
+    //ps.AddDirectionalLight(glm::vec3 {0.5f,0.0f,1.0f});
+    ps.AddDirectionalLight(glm::vec3 {-1.0f,1.0f,1.0f});
+   // ps.ambientLight=glm::vec3 {0.1f,0.2f,0.3f};
+    ps.cameraCoord=glm::vec3 {0.0f,0.0f,2.0f};
 	scn->Init();
-    //scn->Render();
+    scn->Render(SCREEN_SIZE, SCREEN_SIZE, ps);
   //  int width, height;
   //  size_t lineSize = SCREEN_SIZE * 4; // elements per line = SCREEN_SIZE * "RGBA"
   //  for (height = 0; height < SCREEN_SIZE; height++) {
