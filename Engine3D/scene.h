@@ -3,10 +3,6 @@
 #include "shape.h"
 #include "camera.h"
 #include "VertexArray.hpp"
-#include "Sphere.h"
-#include "Plane.h"
-#include "Sphere.h"
-#include "Plane.h"
 #include "SceneParser.h"
 #include <vector>
 
