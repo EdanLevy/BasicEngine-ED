@@ -256,7 +256,7 @@ glm::vec3 Scene::PerPixel(const glm::vec2 &coord, const ParsedScene &ps) {
     glm::vec3 pixelVal = {0.0f, 0.0f, 0.0f}; //rgb values, returned object. defaults to black
 
     //glm::vec3 cameraCoord= {0.0f,0.0f,2.0f};
-    glm::vec3 cameraCoord = ps.camaraPos;
+    glm::vec3 cameraCoord = {ps.camaraPos.x, ps.camaraPos.y, -ps.camaraPos.z};
     for (const auto &sphere: ps.spheres) {
         //glm::vec3 sphereCenter={0.0f,0.0f,0.0f};
         glm::vec3 sphereCenter = sphere.coord;

@@ -2,7 +2,7 @@
 // #include "../DisplayGLFW/display.h"
 #include "game.h"
 #include "../res/includes/glm/glm.hpp"
-#define SCREEN_SIZE 512
+#define SCREEN_SIZE 800
 int main(int argc,char *argv[])
 {
 	const int DISPLAY_WIDTH = SCREEN_SIZE;
