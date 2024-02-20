@@ -253,10 +253,8 @@ void Scene::Render(int widthSize, int heightSize, const ParsedScene &ps) {
 }
 
 /**
- * given a pixel vector in range (-1,-1) to (1,1) on the screen, colors it according to the scene parsed in ps
- * @param coord pixel on the screen
- * @param ps parsed scene data
- * @return vector for rgb color in range 0-1 (need to multiply it by 255 for real colors)
+ * OLD
+ *
  */
 glm::vec3 Scene::PerPixel(const glm::vec2 &coord, const ParsedScene &ps) {
     glm::vec3 pixelVal = {0.0f, 0.0f, 0.0f}; //rgb values, returned object. defaults to black
@@ -332,13 +330,13 @@ glm::vec3 Scene::TraceRay(const Ray &ray, const ParsedScene &ps) {
     glm::vec3 origin = ray.origin - hitSphere->coord;
     glm::vec3 hitPoint = origin + ray.direction * nearestObjectDist;
     glm::vec3 normal = glm::normalize(hitPoint);
+    for (const auto &light: ps.lights) {
+        glm::vec3 lightDir = glm::normalize(light.direction);
+        float lightIntensity = glm::max(glm::dot(normal, -lightDir), 0.0f); // == cos(angle)
 
-    glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
-    float lightIntensity = glm::max(glm::dot(normal, -lightDir), 0.0f); // == cos(angle)
-
-    glm::vec3 sphereColor(1, 0, 1);
-    sphereColor *= lightIntensity;
-    return sphereColor;
+        pixelColor += glm::vec3(hitSphere->color) * lightIntensity;
+    }
+    return pixelColor;
 }
 
 /*
