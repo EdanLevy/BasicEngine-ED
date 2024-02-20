@@ -327,14 +327,20 @@ glm::vec3 Scene::TraceRay(const Ray &ray, const ParsedScene &ps) {
 
     if(hitSphere == nullptr) //didn't hit any object
         return glm::vec3(0.0f);
+    //ambient color
+    pixelColor+= glm::vec3(ps.ambientLightColor*hitSphere->color);
     glm::vec3 origin = ray.origin - hitSphere->coord;
     glm::vec3 hitPoint = origin + ray.direction * nearestObjectDist;
     glm::vec3 normal = glm::normalize(hitPoint);
     for (const auto &light: ps.lights) {
-        glm::vec3 lightDir = glm::normalize(light.direction);
+        glm::vec3 lightDir = glm::normalize(glm::vec3(-light.direction.x,-light.direction.y,light.direction.z));
+        //NOTE: HAD TO NEGATE DIRECTION WHEN COMPARING WITH EXPECTED RESULT, NO IDEA WHY
         float lightIntensity = glm::max(glm::dot(normal, -lightDir), 0.0f); // == cos(angle)
-
-        pixelColor += glm::vec3(hitSphere->color) * lightIntensity;
+        pixelColor += glm::vec3(hitSphere->color) * glm::vec3 (light.intensity) * lightIntensity;
+        glm::vec3 reflectDir = glm::reflect(lightDir, normal);
+        float materialSpecular= 0.7f;
+        float specular = glm::pow(glm::max(glm::dot(normal, reflectDir), 0.0f), hitSphere->color.a);
+        pixelColor += glm::vec3(hitSphere->color * light.intensity) * specular* materialSpecular;
     }
     return pixelColor;
 }
