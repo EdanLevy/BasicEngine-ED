@@ -1,6 +1,7 @@
 #pragma once
 #include "shader.h"
 #include "shape.h"
+#include "Ray.h"
 #include "camera.h"
 #include "VertexArray.hpp"
 #include "SceneParser.h"
@@ -78,7 +79,7 @@ public:
 	inline void SetShapeShader(int shpIndx,int shdrIndx){shapes[shpIndx]->SetShader(shdrIndx);} 
 	
 private:	
-    static float isCheckersDiffusionDistribution(const glm::vec3 coord);
+    static float isCheckersDiffusionDistribution(glm::vec2 coord);
 	std::vector<Camera*> cameras;
 
 	float depth;
@@ -99,5 +100,6 @@ protected:
     glm::vec3 PerPixel(const glm::vec2& coord, const ParsedScene& ps);
 
 
+    glm::vec3 TraceRay(const Ray &ray, const ParsedScene &ps);
 };
 

@@ -238,7 +238,13 @@ void Scene::Render(int widthSize, int heightSize, const ParsedScene &ps) {
             glm::vec2 coord = {-1, -1};
             coord.x += ((2.0f / widthSize) / 2.0f) + (2.0f / widthSize) * height;
             coord.y += ((2.0f / heightSize) / 2.0f) + (2.0f / heightSize) * width;
-            glm::vec3 pixelVal = PerPixel(coord, ps);
+            //glm::vec3 pixelVal= glm::vec3 {1.0,1.0,0};
+           // pixelVal*=isCheckersDiffusionDistribution(coord);
+           Ray ray;
+           ray.origin=glm::vec3 (ps.camaraPos);
+           ray.direction=glm::normalize(glm::vec3(coord.x- ps.camaraPos.x,coord.y- ps.camaraPos.y,0.0f- ps.camaraPos.z));
+            glm::vec3 pixelVal = TraceRay(ray, ps);
+            pixelVal = glm::clamp(pixelVal, glm::vec3(0.0f), glm::vec3(1.0f));
             screen[((height + width * widthSize) * 4)] = (int) (pixelVal.r * 255);
             screen[((height + width * widthSize) * 4) + 1] = (int) (pixelVal.g * 255);
             screen[((height + width * widthSize) * 4) + 2] = (int) (pixelVal.b * 255);
@@ -257,6 +263,7 @@ glm::vec3 Scene::PerPixel(const glm::vec2 &coord, const ParsedScene &ps) {
 
     //glm::vec3 cameraCoord= {0.0f,0.0f,2.0f};
     glm::vec3 cameraCoord = {ps.camaraPos.x, ps.camaraPos.y, -ps.camaraPos.z};
+
     for (const auto &sphere: ps.spheres) {
         //glm::vec3 sphereCenter={0.0f,0.0f,0.0f};
         glm::vec3 sphereCenter = sphere.coord;
@@ -264,7 +271,7 @@ glm::vec3 Scene::PerPixel(const glm::vec2 &coord, const ParsedScene &ps) {
         //  glm::vec3 rayOrigin(0.0f, 0.0f, 0.0f);
         // Convert pixel coordinates to normalized device coordinates (NDC)
         glm::vec3 rayDirection(coord.x - cameraCoord.x, coord.y - cameraCoord.y, 0.0f - cameraCoord.z);
-        //      rayDirection = glm::normalize(rayDirection);
+        rayDirection = glm::normalize(rayDirection);
         // Calculate coefficients for the quadratic equation
         float a = glm::dot(rayDirection, rayDirection);
         float b = 2.0f * glm::dot(cameraCoord + sphereCenter, rayDirection);
@@ -274,8 +281,10 @@ glm::vec3 Scene::PerPixel(const glm::vec2 &coord, const ParsedScene &ps) {
         float discriminant = b * b - 4.0f * a * c;
         // Check for intersection
         if (discriminant >= 0) {
-            pixelVal += glm::vec3(ps.ambientLightColor.x, ps.ambientLightColor.y,
-                                  ps.ambientLightColor.z); //TODO: IN FUTURE ASSURE THIS IS ONLY APPLIED ONCE
+            pixelVal += glm::vec3(ps.ambientLightColor.x*sphere.color.x, ps.ambientLightColor.y*sphere.color.y,
+                                  ps.ambientLightColor.z*sphere.color.z); //TODO: IN FUTURE ASSURE THIS IS ONLY APPLIED ONCE
+            //pixelVal += glm::vec3(ps.ambientLightColor.x, ps.ambientLightColor.y,
+            //                      ps.ambientLightColor.z);
             float nearestHit = (-b - glm::sqrt(discriminant)) / (2.0f *
                                                                  a); //solve quadratic equation, since a is positive, -b -sqrt will always be smaller
             glm::vec3 hitPoint = cameraCoord - sphereCenter + rayDirection * nearestHit;
@@ -283,20 +292,61 @@ glm::vec3 Scene::PerPixel(const glm::vec2 &coord, const ParsedScene &ps) {
             for (const auto &light: ps.lights) {
                 glm::vec3 lightDir = glm::normalize(light.direction - sphereCenter);
                 float shade = glm::max(glm::dot(normal, lightDir), 0.0f);
+                glm::vec3 reflectDir = glm::reflect(-lightDir, normal);
+                float specular = glm::pow(glm::max(glm::dot(normal, reflectDir), 0.0f), 10.0f);
+                glm::vec3 specularColor = glm::vec3 {light.intensity.x * specular,light.intensity.y * specular,light.intensity.z * specular};
                 glm::vec4 temp = sphere.color * shade;
-                pixelVal += glm::vec3(temp.x, temp.y, temp.z);
+
+                pixelVal += glm::vec3(temp.x, temp.y, temp.z)+ specularColor;
+          //      pixelVal += glm::vec3(shade, shade, shade);
+          //
             }
         }
     }
     return pixelVal;
 }
 
+glm::vec3 Scene::TraceRay(const Ray &ray, const ParsedScene &ps) {
+    glm::vec3 pixelColor= glm::vec3 (0.0f);
+    const Sphere* hitSphere= nullptr;
+    float nearestObjectDist=std::numeric_limits<float>::max(); //any distance always is smaller than this value
+    for(const auto &sphere: ps.spheres) {
+        glm::vec3 origin= ray.origin - sphere.coord;
+        float a = glm::dot(ray.direction, ray.direction);
+        float b = 2.0f * glm::dot(origin, ray.direction);
+        float c = glm::dot(origin, origin) - sphere.radius * sphere.radius;
+
+        float discriminant = b * b - 4.0f * a * c;
+
+        if (discriminant >= 0.0f) {
+            float nearerHit = (-b - glm::sqrt(discriminant)) / (2.0f * a);
+            if(nearerHit < nearestObjectDist){
+                nearestObjectDist = nearerHit;
+                hitSphere= &sphere;
+            }
+        }
+    }
+
+    if(hitSphere == nullptr) //didn't hit any object
+        return glm::vec3(0.0f);
+    glm::vec3 origin = ray.origin - hitSphere->coord;
+    glm::vec3 hitPoint = origin + ray.direction * nearestObjectDist;
+    glm::vec3 normal = glm::normalize(hitPoint);
+
+    glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
+    float lightIntensity = glm::max(glm::dot(normal, -lightDir), 0.0f); // == cos(angle)
+
+    glm::vec3 sphereColor(1, 0, 1);
+    sphereColor *= lightIntensity;
+    return sphereColor;
+}
+
 /*
  *  scalar for coord in calculation determines checkers size, bigger scalar smaller checkers
  */
-float Scene::isCheckersDiffusionDistribution(glm::vec3 coord) {
-    coord = coord * 0.5f + 1.0f;
-    return (int) (10 * coord.x) % 2 == (int) (10 * coord.y) % 2 ? 0.5f : 1.5f;
+float Scene::isCheckersDiffusionDistribution(glm::vec2 coord) {
+    coord = (coord+1.0f) * 0.5f;
+    return (int) (10 * coord.x) % 2 == (int) (10 * coord.y) % 2 ? 0.5f : 1.0f;
 }
 
 

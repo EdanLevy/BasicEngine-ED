@@ -79,7 +79,7 @@ ParsedScene *SceneParser::parse() {
     for (int i = 0; i < objs.size(); ++i) {
         if (objs[i].w > 0.0f) {
             // todo: added "-" to x component to make the position correct. maybe we dont need to do this?
-            spheres.emplace_back(objs[i].w, glm::vec3(-objs[i].x, objs[i].y, objs[i].z), objColors[i], objsTypes[i]); 
+            spheres.emplace_back(objs[i].w, glm::vec3(objs[i].x, -objs[i].y, objs[i].z), objColors[i], objsTypes[i]);
         } else {
             planes.emplace_back(objs[i].x, objs[i].y, objs[i].z, objs[i].w, objColors[i], objsTypes[i]);
         }
