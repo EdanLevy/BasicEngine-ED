@@ -57,9 +57,9 @@ struct Spotlight {
 public:
     glm::vec3 direction;
     glm::vec4 intensity;
-    glm::vec3 position;
+    glm::vec4 position;
     
-    Spotlight(glm::vec3 direction, glm::vec4 intensity, glm::vec3 position) {
+    Spotlight(glm::vec3 direction, glm::vec4 intensity, glm::vec4 position) {
         this->direction = direction;
         this->intensity = intensity;
         this->position = position;

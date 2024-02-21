@@ -29,7 +29,7 @@ ParsedScene *SceneParser::parse() {
     std::vector<glm::vec4> objColors = std::vector<glm::vec4>();
     std::vector<glm::vec4> lightDirections = std::vector<glm::vec4>();
     std::vector<glm::vec4> lightIntensity = std::vector<glm::vec4>();
-    std::vector<glm::vec3> lightPosition = std::vector<glm::vec3>();
+    std::vector<glm::vec4> lightPosition = std::vector<glm::vec4>();
 
     while (std::getline(file, line)) {
         // split the line by spaces
@@ -66,8 +66,8 @@ ParsedScene *SceneParser::parse() {
                 lightIntensity.emplace_back(a, b, c, d);
                 break;
             case 'p':
-                iss >> a >> b >> c;
-                lightPosition.emplace_back(a, b, c);
+                iss >> a >> b >> c >> d;
+                lightPosition.emplace_back(a, b, c,d);
                 break;
             default:
                 std::cerr << "Unknown type: " << type << std::endl;
@@ -90,8 +90,7 @@ ParsedScene *SceneParser::parse() {
             lights.emplace_back(glm::vec3(lightDirections[i].x, lightDirections[i].y, lightDirections[i].z),
                                 lightIntensity[i]);
         } else { // spotlight
-            spotlights.emplace_back(glm::vec3(lightPosition[i].x, lightPosition[i].y, lightPosition[i].z),
-                                    lightIntensity[i], glm::vec3(0, 0, 0));
+            spotlights.emplace_back(glm::vec3(lightDirections[i]),lightIntensity[i],glm::vec4(lightPosition[i].x, lightPosition[i].y, lightPosition[i].z,lightPosition[i].w));
         }
 
     }

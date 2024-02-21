@@ -251,63 +251,30 @@ void Scene::Render(int widthSize, int heightSize, const ParsedScene &ps) {
         }
     }
 }
+bool intersectPlane(const Plane &plane, const glm::vec3 &rayDirection) {
+    // Calculate dot product of ray direction and plane normal
+    glm::vec3 normal=glm::normalize(glm::vec3(plane.a,plane.b,plane.c));
+    float dotProduct = glm::dot(rayDirection, normal);
 
-/**
- * OLD
- *
- */
-glm::vec3 Scene::PerPixel(const glm::vec2 &coord, const ParsedScene &ps) {
-    glm::vec3 pixelVal = {0.0f, 0.0f, 0.0f}; //rgb values, returned object. defaults to black
+    // If dot product is not zero, ray intersects the plane
+    return dotProduct != 0.0f;
+}
 
-    //glm::vec3 cameraCoord= {0.0f,0.0f,2.0f};
-    glm::vec3 cameraCoord = {ps.camaraPos.x, ps.camaraPos.y, -ps.camaraPos.z};
-
-    for (const auto &sphere: ps.spheres) {
-        //glm::vec3 sphereCenter={0.0f,0.0f,0.0f};
-        glm::vec3 sphereCenter = sphere.coord;
-        float sphereRadius = sphere.radius;
-        //  glm::vec3 rayOrigin(0.0f, 0.0f, 0.0f);
-        // Convert pixel coordinates to normalized device coordinates (NDC)
-        glm::vec3 rayDirection(coord.x - cameraCoord.x, coord.y - cameraCoord.y, 0.0f - cameraCoord.z);
-        rayDirection = glm::normalize(rayDirection);
-        // Calculate coefficients for the quadratic equation
-        float a = glm::dot(rayDirection, rayDirection);
-        float b = 2.0f * glm::dot(cameraCoord + sphereCenter, rayDirection);
-        float c = glm::dot(cameraCoord + sphereCenter, cameraCoord + sphereCenter) - (sphereRadius * sphereRadius);
-
-        // Calculate the discriminant
-        float discriminant = b * b - 4.0f * a * c;
-        // Check for intersection
-        if (discriminant >= 0) {
-            pixelVal += glm::vec3(ps.ambientLightColor.x*sphere.color.x, ps.ambientLightColor.y*sphere.color.y,
-                                  ps.ambientLightColor.z*sphere.color.z); //TODO: IN FUTURE ASSURE THIS IS ONLY APPLIED ONCE
-            //pixelVal += glm::vec3(ps.ambientLightColor.x, ps.ambientLightColor.y,
-            //                      ps.ambientLightColor.z);
-            float nearestHit = (-b - glm::sqrt(discriminant)) / (2.0f *
-                                                                 a); //solve quadratic equation, since a is positive, -b -sqrt will always be smaller
-            glm::vec3 hitPoint = cameraCoord - sphereCenter + rayDirection * nearestHit;
-            glm::vec3 normal = glm::normalize(hitPoint);
-            for (const auto &light: ps.lights) {
-                glm::vec3 lightDir = glm::normalize(light.direction - sphereCenter);
-                float shade = glm::max(glm::dot(normal, lightDir), 0.0f);
-                glm::vec3 reflectDir = glm::reflect(-lightDir, normal);
-                float specular = glm::pow(glm::max(glm::dot(normal, reflectDir), 0.0f), 10.0f);
-                glm::vec3 specularColor = glm::vec3 {light.intensity.x * specular,light.intensity.y * specular,light.intensity.z * specular};
-                glm::vec4 temp = sphere.color * shade;
-
-                pixelVal += glm::vec3(temp.x, temp.y, temp.z)+ specularColor;
-          //      pixelVal += glm::vec3(shade, shade, shade);
-          //
-            }
-        }
-    }
-    return pixelVal;
+float calculateIntersectionDist(const Plane &plane, const glm::vec3 &rayOrigin, const glm::vec3 &rayDirection) {
+    // Calculate t
+    float t = -(glm::dot(glm::vec3(plane.a, plane.b, plane.c), glm::vec3(rayOrigin.x, rayOrigin.y, rayOrigin.z)) +
+                plane.d) /
+              glm::dot(glm::vec3(plane.a, plane.b, plane.c), rayDirection);
+    // Calculate intersection point
+    return t;
 }
 
 glm::vec3 Scene::TraceRay(const Ray &ray, const ParsedScene &ps) {
     glm::vec3 pixelColor= glm::vec3 (0.0f);
     const Sphere* hitSphere= nullptr;
-    float nearestObjectDist=std::numeric_limits<float>::max(); //any distance always is smaller than this value
+    float nearestSphereDist=std::numeric_limits<float>::max(); //any distance always is smaller than this value
+    const struct Plane* hitPlane= nullptr;
+    float nearestPLaneDist=std::numeric_limits<float>::max(); //any distance always is smaller than this value
     for(const auto &sphere: ps.spheres) {
         glm::vec3 origin= ray.origin - sphere.coord;
         float a = glm::dot(ray.direction, ray.direction);
@@ -318,19 +285,61 @@ glm::vec3 Scene::TraceRay(const Ray &ray, const ParsedScene &ps) {
 
         if (discriminant >= 0.0f) {
             float nearerHit = (-b - glm::sqrt(discriminant)) / (2.0f * a);
-            if(nearerHit < nearestObjectDist){
-                nearestObjectDist = nearerHit;
+            if(nearerHit < nearestSphereDist){
+                nearestSphereDist = nearerHit;
                 hitSphere= &sphere;
             }
         }
     }
+    for (const auto &plane: ps.planes) {
+        //   glm::vec3 rayDirection(coord.x - cameraCoord.x, coord.y - cameraCoord.y, 0.0f - cameraCoord.z);
+        //rayDirection = glm::normalize(ray.direction);
+        //calculate if the ray intersects the plane
+        bool intersect = intersectPlane(plane, ray.direction);
+        if (!intersect) { continue; }
+        float intersection = calculateIntersectionDist(plane, ray.origin, ray.direction);
+        if(intersection < nearestPLaneDist){
+            hitPlane = &plane;
+            nearestPLaneDist=intersection;
+        }
 
-    if(hitSphere == nullptr) //didn't hit any object
+        // Calculate lighting
+//        glm::vec4 finalColor = calculateLighting(ps, surfaceColor, normal);
+
+    }
+  //  glm::vec4 surfaceColor = plane.color;
+
+//    pixelVal = {plane.color.x, plane.color.y, plane.color.z};
+//    pixelVal += glm::vec3(ps.ambientLightColor * plane.color);
+//    pixelVal *= isCheckersDiffusionDistribution(coord);
+    glm::vec3 color;
+    glm::vec3 hitPoint;
+    if(hitSphere == nullptr && hitPlane== nullptr) //didn't hit any object
         return glm::vec3(0.0f);
+    if(hitSphere != nullptr & hitPlane == nullptr) { //ray has hit a sphere
+        color=glm::vec3(hitSphere->color);
+        glm::vec3 origin = ray.origin - hitSphere->coord;
+        hitPoint = origin + ray.direction * nearestSphereDist;
+
+    }
+    if(hitSphere == nullptr & hitPlane != nullptr) { //ray has hit a plane
+
+    }
+    else {
+        if(nearestSphereDist< nearestPLaneDist){
+            color=glm::vec3(hitSphere->color);
+            glm::vec3 origin = ray.origin - hitSphere->coord;
+            hitPoint = origin + ray.direction * nearestSphereDist;
+        }
+        else {
+
+        }
+    }
+    pixelColor+= glm::vec3(ps.ambientLightColor) * color;
+
     //ambient color
-    pixelColor+= glm::vec3(ps.ambientLightColor*hitSphere->color);
-    glm::vec3 origin = ray.origin - hitSphere->coord;
-    glm::vec3 hitPoint = origin + ray.direction * nearestObjectDist;
+   // glm::vec3 origin = ray.origin - hitSphere->coord;
+   // glm::vec3 hitPoint = origin + ray.direction * nearestSphereDist;
     glm::vec3 normal = glm::normalize(hitPoint);
     for (const auto &light: ps.lights) {
         glm::vec3 lightDir = glm::normalize(glm::vec3(-light.direction.x,-light.direction.y,light.direction.z));
@@ -339,8 +348,24 @@ glm::vec3 Scene::TraceRay(const Ray &ray, const ParsedScene &ps) {
         pixelColor += glm::vec3(hitSphere->color) * glm::vec3 (light.intensity) * lightIntensity;
         glm::vec3 reflectDir = glm::reflect(lightDir, normal);
         float materialSpecular= 0.7f;
-        float specular = glm::pow(glm::max(glm::dot(normal, reflectDir), 0.0f), hitSphere->color.a);
+        float specular = glm::pow(glm::max(glm::dot(normal, reflectDir), 0.0f), 3*hitSphere->color.a);
         pixelColor += glm::vec3(hitSphere->color * light.intensity) * specular* materialSpecular;
+        //TODO: SPECULAR TOO SPREAD OUT, WHY?
+    }
+
+    for (const auto &spotlight: ps.spotlights) {
+        glm::vec3 lightDir = glm::normalize(glm::vec3(-spotlight.direction.x,-spotlight.direction.y,spotlight.direction.z));
+        //NOTE: HAD TO NEGATE DIRECTION WHEN COMPARING WITH EXPECTED RESULT, NO IDEA WHY
+        float coneFactor = glm::dot(-lightDir, glm::normalize(spotlight.direction));
+        if (coneFactor <= spotlight.position.a) {
+            float lightIntensity = glm::max(glm::dot(normal, -lightDir), 0.0f); // == cos(angle)
+            pixelColor += glm::vec3(hitSphere->color) * glm::vec3(spotlight.intensity) * lightIntensity;
+            glm::vec3 reflectDir = glm::reflect(lightDir, normal);
+            float materialSpecular = 0.7f;
+            float specular = glm::pow(glm::max(glm::dot(normal, reflectDir), 0.0f), hitSphere->color.a);
+            pixelColor += glm::vec3(hitSphere->color * spotlight.intensity) * specular * materialSpecular;
+            //TODO: SPECULAR TOO SPREAD OUT, WHY?
+        }
     }
     return pixelColor;
 }
