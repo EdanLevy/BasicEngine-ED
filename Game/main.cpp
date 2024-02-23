@@ -2,7 +2,7 @@
 // #include "../DisplayGLFW/display.h"
 #include "game.h"
 #include "../res/includes/glm/glm.hpp"
-#define SCREEN_SIZE 800
+#define SCREEN_SIZE 512
 int main(int argc,char *argv[])
 {
 	const int DISPLAY_WIDTH = SCREEN_SIZE;
@@ -28,33 +28,6 @@ int main(int argc,char *argv[])
 
 	scn->Init();
     scn->Render(SCREEN_SIZE, SCREEN_SIZE, *ps);
-  //  int width, height;
-  //  size_t lineSize = SCREEN_SIZE * 4; // elements per line = SCREEN_SIZE * "RGBA"
-  //  for (height = 0; height < SCREEN_SIZE; height++) {
-  //      for (width = 0; width < SCREEN_SIZE; width++) {
-  //          glm::vec2 coord = {-1, -1};
-  //          const size_t row = height * lineSize;
-  //          const size_t col = width * 4;
-  //          // glm::vec2 coord = { (float)width / (float)SCREEN_SIZE, (float)height / (float)SCREEN_SIZE }; // 0->1
-  //          //   coord = coord * 2.0f - 1.0f; // 0 -> 1 to -1 -> 1
-  //          coord.x += ((2.0f / SCREEN_SIZE) / 2.0f) + (2.0f / SCREEN_SIZE) * height;
-  //          coord.y += ((2.0f / SCREEN_SIZE) / 2.0f) + (2.0f / SCREEN_SIZE) * width;
-  //          // std::cout << coord.x << "," << coord.y << std::endl;
-  //          if((abs(coord.x) <0.5) && (abs(coord.y) <0.5) ) {
-  //        //  if (height % 2 == 0 && width % 2 == 0) {
-  //              scn->screen[((width + height * SCREEN_SIZE) * 4)] = 0;
-  //              scn->screen[((width + height * SCREEN_SIZE) * 4) + 1] = 0;
-  //              scn->screen[((width + height * SCREEN_SIZE) * 4) + 2] = 0;
-  //              scn->screen[((width + height * SCREEN_SIZE) * 4) + 3] = 0;
-  //          } else {
-  //              scn->screen[((width + height * SCREEN_SIZE) * 4)] = 255;
-  //              scn->screen[((width + height * SCREEN_SIZE) * 4)+1] = 255;
-  //              scn->screen[((width + height * SCREEN_SIZE) * 4)+2] = 255;
-  //              scn->screen[((width + height * SCREEN_SIZE) * 4)+3] = 255;
-  //          }
-  //      }
-  //      }
-
     display.SetScene(scn);
     //scn->AddTexture("../res/textures/plane.png", false);
 

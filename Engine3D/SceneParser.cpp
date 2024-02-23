@@ -14,8 +14,7 @@ ParsedScene *SceneParser::parse() {
 
     glm::vec3 camaraPos;
     glm::vec4 ambientLightColor;
-    std::vector<Sphere> spheres = std::vector<Sphere>();
-    std::vector<Plane> planes = std::vector<Plane>();
+    std::vector<SceneObject*> sceneObjs = std::vector<SceneObject*>();
     std::vector<Light> lights = std::vector<Light>();
     std::vector<Spotlight> spotlights = std::vector<Spotlight>();
 
@@ -77,12 +76,15 @@ ParsedScene *SceneParser::parse() {
     }
 
     for (int i = 0; i < objs.size(); ++i) {
+        SceneObject* object;
         if (objs[i].w > 0.0f) {
             // todo: added "-" to x component to make the position correct. maybe we dont need to do this?
-            spheres.emplace_back(objs[i].w, glm::vec3(objs[i].x, -objs[i].y, objs[i].z), objColors[i], objsTypes[i]);
+           object = new Sphere(objs[i].w, glm::vec3(objs[i].x, -objs[i].y, objs[i].z), objColors[i], objsTypes[i]);
         } else {
-            planes.emplace_back(objs[i].x, objs[i].y, objs[i].z, objs[i].w, objColors[i], objsTypes[i]);
+            object = new Plane(objs[i].x, objs[i].y, objs[i].z, objs[i].w, objColors[i], objsTypes[i]);
         }
+        sceneObjs.push_back(object);
+
     }
 
     for (int i = 0; i < lightDirections.size(); ++i) {
@@ -100,19 +102,18 @@ ParsedScene *SceneParser::parse() {
         spotlights[i].position = lightPosition[i];
     }
 
-    return new ParsedScene(camaraPos, ambientLightColor, spheres, planes, lights, spotlights);
+    return new ParsedScene(camaraPos, ambientLightColor, sceneObjs, lights, spotlights);
 
 }
 
 SceneParser::~SceneParser() = default;
 
 
-ParsedScene::ParsedScene(const glm::vec3 &camaraPos, const glm::vec4 &ambientLightColor, std::vector<Sphere> spheres,
-                         std::vector<Plane> planes, std::vector<Light> lights, std::vector<Spotlight> spotlights) {
+ParsedScene::ParsedScene(const glm::vec3 &camaraPos, const glm::vec4 &ambientLightColor, std::vector<SceneObject*> sceneObj, std::vector<Light> lights, std::vector<Spotlight> spotlights) {
     this->camaraPos = camaraPos;
     this->ambientLightColor = ambientLightColor;
     this->spheres = std::move(spheres);
-    this->planes = std::move(planes);
+    this->sceneObjects = std::move(sceneObj);
     this->lights = std::move(lights);
     this->spotlights = std::move(spotlights);
 
