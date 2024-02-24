@@ -276,7 +276,7 @@ glm::vec3 Scene::TraceRay(const Ray &ray, const ParsedScene &ps) {
     if (nearestObject == nullptr){
         return glm::vec3 (0.0f);
     }
-    glm::vec4 color= nearestObject->getColor(glm::vec2(normal));
+    glm::vec4 color= nearestObject->getColor(glm::vec2(hitPoint));
     pixelColor+= glm::vec3(ps.ambientLightColor * color);
 
     for (const auto &light: ps.lights) {
@@ -288,44 +288,46 @@ glm::vec3 Scene::TraceRay(const Ray &ray, const ParsedScene &ps) {
         float materialSpecular= 0.7f;
         float specular = glm::pow(glm::max(glm::dot(normal, reflectDir), 0.0f), 3* nearestObject->getColor(glm::vec2(hitPoint)).a);
         pixelColor += glm::vec3(  color * light.intensity) * specular* materialSpecular;
-        //TODO: SPECULAR TOO SPREAD OUT, WHY?
     }
 
     for (const auto &spotlight: ps.spotlights) {
-        glm::vec3 lightDir = glm::normalize(glm::vec3(-spotlight.direction.x,-spotlight.direction.y,spotlight.direction.z));
+        glm::vec3 lightDir = glm::normalize(
+                glm::vec3(-spotlight.direction.x, -spotlight.direction.y, spotlight.direction.z));
         //NOTE: HAD TO NEGATE DIRECTION WHEN COMPARING WITH EXPECTED RESULT, NO IDEA WHY
         //float coneFactor = glm::dot(-lightDir, glm::normalize(spotlight.direction));
-       float cosAngle = glm::dot(-lightDir, glm::normalize(spotlight.direction));
-       float coneFactor = glm::clamp((cosAngle - spotlight.position.a/2) / (1.0f - spotlight.position.a/2), 0.0f, 1.0f);
-        if (coneFactor > spotlight.position.a) { continue;}
-            // if (coneFactor >= 0) {
-//            const Sphere *hitLightSphere = nullptr;
-//            float nearestToLightSphere = std::numeric_limits<float>::max(); //any distance always is smaller than this value
-//            const struct Plane *hitLightPlane = nullptr;
-//            float nearestToLightPlane = std::numeric_limits<float>::max(); //any distance always is smaller than this value
-//            for (const auto &sphere: ps.spheres) {
-//                if(&sphere == hitSphere) continue;
-//                glm::vec3 origin = glm::vec3(hitPoint) - sphere.coord;
-//                float a = glm::dot(lightDir, lightDir);
-//                float b = 2.0f * glm::dot(origin, lightDir);
-//                float c = glm::dot(origin, origin) - sphere.radius * sphere.radius;
-//                float discriminant = b * b - 4.0f * a * c;
-//                if (discriminant >= 0.0f) {
-//                    float nearerHit = (-b - glm::sqrt(discriminant)) / (2.0f * a);
-//                    if (nearerHit < nearestToLightSphere) {
-//                        nearestToLightSphere = nearerHit;
-//                        hitLightSphere = &sphere;
-//                    }
-//                }
-//            }
-                    float lightIntensity = glm::max(glm::dot(normal, -lightDir), 0.0f); // == cos(angle)
-                    pixelColor += glm::vec3( color) * glm::vec3(spotlight.intensity) * lightIntensity;
-                    glm::vec3 reflectDir = glm::reflect(lightDir, normal);
-                    float materialSpecular = 0.7f;
-                    float specular = glm::pow(glm::max(glm::dot(normal, reflectDir), 0.0f), 3 *  nearestObject->getColor(glm::vec2(hitPoint)).a);
-                    pixelColor += glm::vec3( color * spotlight.intensity) * specular * materialSpecular;
-                    //TODO: SPECULAR TOO SPREAD OUT, WHY?
+        // Calculate the angle between spotlight direction and vector to hit point
+        //float spotlightAngle = glm::degrees(acos(glm::dot(-lightDir, glm::normalize( hitPoint - glm::vec3(spotlight.position)))));
+        //float angle=glm::degrees(acos(spotlight.position.a));
+        float spotlightAngle = acos(glm::dot(-lightDir, glm::normalize(hitPoint - glm::vec3(spotlight.position))));
+        float angle = acos(-spotlight.position.a * 1.3);
+
+        // Check if the hit point is within the spotlight cone angle
+        //  if (spotlightAngle >= angle) { continue;}
+        bool isBlocked = false;
+        //glm::vec3 tmpPos= glm::vec3 (-spotlight.position.x,-spotlight.position.y,spotlight.position.z);
+        Ray shadowRay;
+        shadowRay.origin = hitPoint;
+        shadowRay.direction = glm::normalize( glm::vec3(spotlight.position) - hitPoint  );
+        float CurrObjDist = glm::distance(hitPoint, glm::vec3(spotlight.position));
+        for (SceneObject *obj: ps.sceneObjects) {
+            if (!obj->Intersect(shadowRay) || obj == nearestObject) { continue; }
+            glm::vec3 shadowHitPoint = obj->CalcHitpoint(shadowRay);
+            float dist = glm::distance(shadowHitPoint, glm::vec3(spotlight.position));
+            if (dist < CurrObjDist) {
+                isBlocked= true;
+                break;
+            }
         }
+        if (!isBlocked) {
+            float lightIntensity = glm::max(glm::dot(normal, -lightDir), 0.0f); // == cos(angle)
+            pixelColor += glm::vec3(color) * glm::vec3(spotlight.intensity) * lightIntensity;
+            glm::vec3 reflectDir = glm::reflect(lightDir, normal);
+            float materialSpecular = 0.7f;
+            float specular = glm::pow(glm::max(glm::dot(normal, reflectDir), 0.0f),
+                                      3 * nearestObject->getColor(glm::vec2(hitPoint)).a);
+            pixelColor += glm::vec3(color * spotlight.intensity) * specular * materialSpecular;
+        }
+    }
     return pixelColor;
 }
 

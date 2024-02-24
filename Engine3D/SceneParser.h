@@ -56,7 +56,7 @@ public:
 
     }
 
-    glm::vec4 getColor(glm::vec2  coord)const override{
+    glm::vec4 getColor(glm::vec2 coord) const override{
          return color;
     }
 };
@@ -78,10 +78,38 @@ public:
         return glm::dot(ray.direction, getNormal()) != 0;
     }
     glm::vec4 getColor(glm::vec2 coord)const override{
-        coord = (coord+2.0f) * 0.25f;
-        float multiplier = 100;
-        float checkerColor= (int(multiplier*coord.x)%2) == (int(multiplier*coord.y) % 2)? 0.5f : 1.0f;
-        return glm::vec4(glm::vec3(color*checkerColor),color.a);
+       // coord = (coord+2.0f) * 0.25f;
+       // float multiplier = 100;
+       // float checkerColor= (int(multiplier*coord.x)%2) == (int(multiplier*coord.y) % 2)? 0.5f : 1.0f;
+ //return glm::vec4(glm::vec3(color*checkerColor),color.a);
+        float scale_parameter = 0.5f;
+
+        float chessboard = 0;
+
+        if (coord.x < 0) {
+            chessboard += floor((0.5 - coord.x) / scale_parameter);
+
+        }
+        else {
+            chessboard += floor(coord.x / scale_parameter);
+        }
+        if (coord.y < 0) {
+            chessboard += floor((0.5 - coord.y) / scale_parameter);
+
+        }
+        else {
+            chessboard += floor(coord.y / scale_parameter);
+        }
+
+        chessboard = (chessboard * 0.5) - int(chessboard * 0.5);
+        chessboard *= 2;
+
+        if (chessboard > 0.5) {
+            return 0.5f * color;
+
+        }
+
+        return color;
     }
 private:
     glm::vec3 getNormal() const {
