@@ -27,14 +27,14 @@ void Game::Init()
 	AddShader("../res/shaders/pickingShader");
 	AddShader("../res/shaders/basicShader");
 
-	//AddTexture("../res/textures/lena256.jpg",false);
+	AddTexture("../res/textures/plane.png",false);
 
 
-	AddShape(Plane, -1, TRIANGLES);
+	AddShape(Cube, -1, TRIANGLES);
 
 	pickedShape = 0;
 
-	//SetShapeTex(0,0);
+	SetShapeTex(0,0);
 	MoveCamera(0, zTranslate, 10);
 	pickedShape = -1;
 
