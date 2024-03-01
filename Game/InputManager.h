@@ -17,7 +17,7 @@
 	void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	{
 		Game *scn = (Game*)glfwGetWindowUserPointer(window);
-		scn->MyTranslate(glm::vec3(0,0,xoffset),0);
+		scn->MoveCamera(0,Game::transformations::zTranslate,-yoffset);
 		
 	}
 	

@@ -29,9 +29,22 @@ void Game::Init()
 
 	AddTexture("../res/textures/plane.png",false);
 
-
-	AddShape(Cube, -1, TRIANGLES);
-
+    for (int i = 0; i < 3 ; ++i) { //0 - top , 1 - middle, 2 - bottom
+        for (int j = 0; j < 3; ++j) { //0 - left, 1 - middle, 2 - right
+            for (int k = 0; k < 3; ++k) { // 0 - back, 1 - middle, 2 - front
+                int cubeIndex = i * 3 * 3 + j * 3 + k;
+                AddShape(Cube, -1, TRIANGLES);
+                SetShapeTex(cubeIndex, 0);
+                shapes[cubeIndex]->MyScale(glm::vec3(0.5f));
+                shapes[cubeIndex]->MyTranslate(glm::vec3(1.0f*j - 1.0f ,1.0f-1.0f*i, -(3.0f - 1.0f*(3-k))), 0);
+                shapes[cubeIndex]->MakeTrans();
+                
+                
+            }
+        }
+        
+    }
+    
 	pickedShape = 0;
 
 	SetShapeTex(0,0);
