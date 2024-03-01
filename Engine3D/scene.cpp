@@ -205,7 +205,7 @@ void Scene::MouseProccessing(int button)
 			WhenRotate();
 		}
 	}
-}
+}   
 
 void Scene::ZeroShapesTrans()
 {
