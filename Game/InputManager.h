@@ -29,6 +29,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
                 glfwSetWindowShouldClose(window, GLFW_TRUE);
                 break;
             case GLFW_KEY_SPACE:
+                scn->switchCubeRotationDirection();
                 std::cout << "space pressed reversing rotation direction" << std::endl;
                 if (scn->IsActive())
                     scn->Deactivate();
@@ -44,21 +45,27 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
                 scn->MoveCamera(0, scn->zTranslate, -0.4f);
                 break;
             case GLFW_KEY_R:
+                scn->RubiksCubeOperation((Faces) key);
                 std::cout << "rotate right face" << std::endl;
                 break;
             case GLFW_KEY_L:
+                scn->RubiksCubeOperation((Faces) key);
                 std::cout << "rotate left face" << std::endl;
                 break;
             case GLFW_KEY_U:
+                scn->RubiksCubeOperation((Faces) key);
                 std::cout << "rotate up face" << std::endl;
                 break;
             case GLFW_KEY_D:
+                scn->RubiksCubeOperation((Faces) key);
                 std::cout << "rotate down face" << std::endl;
                 break;
             case GLFW_KEY_F:
+                scn->RubiksCubeOperation((Faces) key);
                 std::cout << "rotate front face" << std::endl;
                 break;
             case GLFW_KEY_B:
+                scn->RubiksCubeOperation((Faces) key);
                 std::cout << "rotate back face" << std::endl;
                 break;
             case GLFW_KEY_A:
@@ -67,7 +74,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             case GLFW_KEY_Z:
                 std::cout << "dividing by 2 rotation angle" << std::endl;
                 break;
-                    
+
             default:
                 break;
         }

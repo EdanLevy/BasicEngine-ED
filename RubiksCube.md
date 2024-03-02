@@ -113,7 +113,7 @@ class rubiksCube
  8 --> 6 
  }
 
-for i in cubes.length
+for i in cubeSlots.length
 auto NewPosition = indexToPos[i]
  cube[i].moveTo(NewPosition)
 

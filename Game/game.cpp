@@ -38,12 +38,11 @@ void Game::Init()
                 shapes[cubeIndex]->MyScale(glm::vec3(0.5f));
                 shapes[cubeIndex]->MyTranslate(glm::vec3(1.0f*j - 1.0f ,1.0f-1.0f*i, -(3.0f - 1.0f*(3-k))), 0);
                 shapes[cubeIndex]->MakeTrans();
-                
-                
             }
         }
-        
     }
+    
+    this->theCube = new RubiksCube(shapes);
     
 	pickedShape = 0;
 
@@ -86,6 +85,11 @@ void Game::Motion()
 	}
 }
 
-Game::~Game(void)
+Game::~Game()
 {
+    delete theCube;
+}
+
+void Game::RubiksCubeOperation(Faces face) {
+    theCube->rotateFace(face, clockwise);
 }
