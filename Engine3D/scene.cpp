@@ -243,7 +243,7 @@ void Scene::Render(int widthSize, int heightSize, const ParsedScene &ps) {
            Ray ray;
            ray.origin=glm::vec3 (ps.camaraPos);
            ray.direction=glm::normalize(glm::vec3(coord.x- ps.camaraPos.x,coord.y- ps.camaraPos.y,0.0f- ps.camaraPos.z));
-            glm::vec3 pixelVal = TraceRay(ray, ps);
+            glm::vec3 pixelVal = TraceRay(ray, ps, 0);
             pixelVal = glm::clamp(pixelVal, glm::vec3(0.0f), glm::vec3(1.0f));
             screen[((height + width * widthSize) * 4)] = (int) (pixelVal.r * 255);
             screen[((height + width * widthSize) * 4) + 1] = (int) (pixelVal.g * 255);
@@ -251,81 +251,97 @@ void Scene::Render(int widthSize, int heightSize, const ParsedScene &ps) {
         }
     }
 }
-glm::vec3 Scene::TraceRay(const Ray &ray, const ParsedScene &ps) {
+glm::vec3 Scene::TraceRay(const Ray &ray, const ParsedScene &ps, int recDepth) {
+   if(recDepth >5)
+       return glm::vec3 (0.0f);
     glm::vec3 pixelColor= glm::vec3 (0.0f);
-    const struct SceneObject* nearestObject= nullptr;
+    struct SceneObject* nearestObject= nullptr;
     float nearestObjectDist=std::numeric_limits<float>::max(); //any distance always is smaller than this value
     glm::vec3 normal= glm::vec3 (0.0f);
     glm::vec3 hitPoint= glm::vec3 (0.0f);
     for(SceneObject* obj: ps.sceneObjects){
-        if(!obj->Intersect(ray)) { continue;}
-        hitPoint = obj->CalcHitpoint(ray);
-        float dist=glm::distance(hitPoint,ray.origin);
-        if(dist < nearestObjectDist){
+        float intersection = obj->Intersect(ray);
+       // if(intersection < 0) { continue;}
+        if( intersection>=0 && intersection < nearestObjectDist ){
+            hitPoint = ray.origin+intersection*ray.direction;
             nearestObject=obj;
-            nearestObjectDist=dist;
-            normal=glm::normalize(hitPoint);
+            nearestObjectDist=intersection;
+            normal=obj->getNormal(hitPoint);
         }
 
-    //ambient color
-   // glm::vec3 origin = ray.origin - hitSphere->coord;
-   // glm::vec3 hitPoint = origin + ray.direction * nearestSphereDist;
-    //glm::vec3 normal = glm::normalize();
-   // auto colorOf = nearestObject->getColor(glm::vec2(normal));
     }
     if (nearestObject == nullptr){
         return glm::vec3 (0.0f);
     }
+    if(nearestObject->type=='r'){
+        if(recDepth>=5)
+            return glm::vec3(0.0f);
+        glm::vec3 refNormal = glm::normalize(nearestObject->getNormal(hitPoint));
+        glm::vec3 refIn = glm::normalize(-ray.direction);
+        glm::vec3 refOut = glm::normalize(2.0f * glm::dot(refNormal, refIn) * refNormal - refIn);
+        //glm::vec3 refOut = glm::reflect(refIn,refNormal);
+        Ray newRay;
+        newRay.origin=hitPoint;
+        newRay.direction=refOut;
+        return TraceRay(newRay,ps,recDepth+1);
+    }
     glm::vec4 color= nearestObject->getColor(glm::vec2(hitPoint));
     pixelColor+= glm::vec3(ps.ambientLightColor * color);
-
     for (const auto &light: ps.lights) {
-        glm::vec3 lightDir = glm::normalize(glm::vec3(-light.direction.x,-light.direction.y,light.direction.z));
-        //NOTE: HAD TO NEGATE DIRECTION WHEN COMPARING WITH EXPECTED RESULT, NO IDEA WHY
-        float lightIntensity = glm::max(glm::dot(normal, -lightDir), 0.0f); // == cos(angle)
-        pixelColor += glm::vec3( color) * glm::vec3 (light.intensity) * lightIntensity;
-        glm::vec3 reflectDir = glm::reflect(lightDir, normal);
-        float materialSpecular= 0.7f;
-        float specular = glm::pow(glm::max(glm::dot(normal, reflectDir), 0.0f), 3* nearestObject->getColor(glm::vec2(hitPoint)).a);
-        pixelColor += glm::vec3(  color * light.intensity) * specular* materialSpecular;
-    }
-
-    for (const auto &spotlight: ps.spotlights) {
-        glm::vec3 lightDir = glm::normalize(
-                glm::vec3(-spotlight.direction.x, -spotlight.direction.y, spotlight.direction.z));
-        //NOTE: HAD TO NEGATE DIRECTION WHEN COMPARING WITH EXPECTED RESULT, NO IDEA WHY
-        //float coneFactor = glm::dot(-lightDir, glm::normalize(spotlight.direction));
-        // Calculate the angle between spotlight direction and vector to hit point
-        //float spotlightAngle = glm::degrees(acos(glm::dot(-lightDir, glm::normalize( hitPoint - glm::vec3(spotlight.position)))));
-        //float angle=glm::degrees(acos(spotlight.position.a));
-        float spotlightAngle = acos(glm::dot(-lightDir, glm::normalize(hitPoint - glm::vec3(spotlight.position))));
-        float angle = acos(-spotlight.position.a * 1.3);
-
-        // Check if the hit point is within the spotlight cone angle
-        //  if (spotlightAngle >= angle) { continue;}
-        bool isBlocked = false;
-        //glm::vec3 tmpPos= glm::vec3 (-spotlight.position.x,-spotlight.position.y,spotlight.position.z);
-        Ray shadowRay;
-        shadowRay.origin = hitPoint;
-        shadowRay.direction = glm::normalize( glm::vec3(spotlight.position) - hitPoint  );
-        float CurrObjDist = glm::distance(hitPoint, glm::vec3(spotlight.position));
+        bool isBLocked=false;
         for (SceneObject *obj: ps.sceneObjects) {
-            if (!obj->Intersect(shadowRay) || obj == nearestObject) { continue; }
-            glm::vec3 shadowHitPoint = obj->CalcHitpoint(shadowRay);
-            float dist = glm::distance(shadowHitPoint, glm::vec3(spotlight.position));
-            if (dist < CurrObjDist) {
-                isBlocked= true;
+            Ray lightRay;
+            lightRay.origin=hitPoint;
+            lightRay.direction=-light.direction;
+            if (obj->Intersect(lightRay)>0 && obj != nearestObject){
+                isBLocked = true;
                 break;
             }
         }
-        if (!isBlocked) {
-            float lightIntensity = glm::max(glm::dot(normal, -lightDir), 0.0f); // == cos(angle)
-            pixelColor += glm::vec3(color) * glm::vec3(spotlight.intensity) * lightIntensity;
-            glm::vec3 reflectDir = glm::reflect(lightDir, normal);
-            float materialSpecular = 0.7f;
-            float specular = glm::pow(glm::max(glm::dot(normal, reflectDir), 0.0f),
-                                      3 * nearestObject->getColor(glm::vec2(hitPoint)).a);
-            pixelColor += glm::vec3(color * spotlight.intensity) * specular * materialSpecular;
+       // if(true){
+        if(!isBLocked) {
+            glm::vec3 normalVec = glm::normalize(normal);
+            glm::vec3 lightDir = glm::normalize(-light.direction);
+            float diffuseDot = glm::max(glm::dot(lightDir, normalVec), 0.0f);
+            glm::vec3 diffuse = diffuseDot * glm::vec3(color) * glm::vec3(light.intensity);
+           glm::vec3 reflectionDir=glm::reflect(-lightDir,normalVec);
+            glm::vec3 CameraRay = glm::normalize(ray.origin - hitPoint);
+            float specularDot = glm::max(glm::dot(reflectionDir, CameraRay), 0.0f); // Ensure non-negative
+            float coEfficient = 0.7;
+            glm::vec3 specular = glm::vec3(coEfficient * std::pow(specularDot, color.a) * light.intensity);
+            pixelColor += diffuse + specular;
+        }
+    }
+
+    for (const auto &spotlight: ps.spotlights) {
+        glm::vec3 lightDir = glm::normalize(hitPoint - glm::vec3(spotlight.position));
+        double hitAngle = (glm::dot(spotlight.direction, lightDir)/(glm::length(spotlight.direction)*glm::length(lightDir)));
+        if (hitAngle >= spotlight.position.a) {
+            bool isBlocked = false;
+            for (SceneObject *obj: ps.sceneObjects) {
+                Ray lightRay;
+                lightRay.origin = glm::vec3(spotlight.position);
+                lightRay.direction = lightDir;
+                if (obj->Intersect(lightRay)>0 && nearestObject->Intersect(lightRay) > obj->Intersect(lightRay)){
+                    isBlocked = true;
+                    break;
+                }
+        }
+          //  if(true){
+            if (!isBlocked) {
+                glm::vec3 lightDir = glm::normalize(-spotlight.direction);
+                glm::vec3 normalVec = glm::normalize(normal);
+                float diffuseDot = glm::max(glm::dot(lightDir, normalVec), 0.0f);
+                glm::vec3 diffuse = diffuseDot * glm::vec3(color) * glm::vec3(spotlight.intensity);
+                glm::vec3 reflectionDir = glm::normalize(2.0f * glm::dot(normalVec, lightDir) * normalVec - lightDir);
+                glm::vec3 cameraRay = glm::normalize(ray.origin - hitPoint);
+                float specularDot = glm::max(glm::dot(reflectionDir, cameraRay), 0.0f); // Ensure non-negative
+                float coEfficient = 0.7;
+                glm::vec3 specular = glm::vec3(
+                        coEfficient * std::pow(specularDot, color.a) *
+                        spotlight.intensity);
+                pixelColor += diffuse + specular;
+            }
         }
     }
     return pixelColor;

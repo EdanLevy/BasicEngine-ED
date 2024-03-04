@@ -100,6 +100,6 @@ protected:
     glm::vec3 PerPixel(const glm::vec2& coord, const ParsedScene& ps);
 
 
-    glm::vec3 TraceRay(const Ray &ray, const ParsedScene &ps);
+    glm::vec3 TraceRay(const Ray &ray, const ParsedScene &ps, int recDepth);
 };
 

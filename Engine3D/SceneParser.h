@@ -19,10 +19,9 @@ public:
     char type;
 
     SceneObject(char type, glm::vec4 color): type(type), color(color){}
-
-    virtual bool Intersect(const Ray &ray) = 0;
-    virtual glm::vec3 CalcHitpoint(const Ray &ray) = 0;
-
+    virtual float Intersect(const Ray &ray) = 0;
+    //virtual glm::vec3 CalcHitpoint(const Ray &ray) = 0;
+    virtual glm::vec3 getNormal(glm::vec3 hitpoint) = 0;
     virtual glm::vec4 getColor( glm::vec2 coord) const = 0;
 };
 
@@ -34,30 +33,39 @@ public:
 
     glm::vec3 coord;
     float radius;
-    glm::vec3 CalcHitpoint(const Ray &ray) override{
+//    glm::vec3 CalcHitpoint(const Ray &ray) override{
+//        glm::vec3 origin= ray.origin - coord;
+//        float a = glm::dot(ray.direction, ray.direction);
+//        float b = 2.0f * glm::dot(origin, ray.direction);
+//        float c = glm::dot(origin, origin) - radius * radius;
+//        float discriminant = b * b - 4.0f * a * c;
+//        float nearerHit = (-b - glm::sqrt(discriminant)) / (2.0f * a);
+//        return origin + ray.direction * nearerHit;
+//    }
+
+    float Intersect(const Ray &ray) override{
         glm::vec3 origin= ray.origin - coord;
         float a = glm::dot(ray.direction, ray.direction);
-        float b = 2.0f * glm::dot(origin, ray.direction);
+        float b = 2.0f * glm::dot(ray.direction,origin);
         float c = glm::dot(origin, origin) - radius * radius;
         float discriminant = b * b - 4.0f * a * c;
+        if(discriminant<0)
+            return -1.0f;
         float nearerHit = (-b - glm::sqrt(discriminant)) / (2.0f * a);
-        return origin + ray.direction * nearerHit;
-    }
-
-    bool Intersect(const Ray &ray) override{
-        glm::vec3 origin= ray.origin - coord;
-        float a = glm::dot(ray.direction, ray.direction);
-        float b = 2.0f * glm::dot(origin, ray.direction);
-        float c = glm::dot(origin, origin) - radius * radius;
-
-        float discriminant = b * b - 4.0f * a * c;
-
-        return discriminant >= 0.0f;
-
+        if (nearerHit >= 0.001f)
+            return nearerHit;
+        float furtherHit = (b - glm::sqrt(discriminant)) / (2.0f * a);
+        if (furtherHit >= 0.001f) {
+            return furtherHit;
+        }
+        return -1.0f;
     }
 
     glm::vec4 getColor(glm::vec2 coord) const override{
          return color;
+    }
+    glm::vec3 getNormal(glm::vec3 hitpoint) override{
+        return hitpoint-coord;
     }
 };
 
@@ -69,13 +77,20 @@ public:
 
 
 
-    glm::vec3 CalcHitpoint(const Ray &ray) override{
-        glm::vec3 normal=getNormal();
-        float t = (glm::dot(normal, glm::vec3(ray.origin)) +d) / glm::dot(normal, ray.direction);
-        return ray.origin +t * ray.direction;
-    }
-    bool Intersect(const Ray &ray) override{
-        return glm::dot(ray.direction, getNormal()) != 0;
+//    glm::vec3 CalcHitpoint(const Ray &ray) override{
+//        glm::vec3 normal=getNormal();
+//        float t = (glm::dot(normal, glm::vec3(ray.origin)) +d) / glm::dot(normal, ray.direction);
+//        return ray.origin +t * ray.direction;
+//    }
+    float Intersect(const Ray &ray) override{
+        float denominator = glm::dot(glm::vec3(a, b, c), ray.direction);
+        if (denominator < 0.0001f)
+            return -1.0;
+        float res = -(glm::dot(glm::vec3(a,b,c), ray.origin) + d) / denominator;
+        if (res <= 0.001f) {
+            return -1.0;
+        }
+        return res;
     }
     glm::vec4 getColor(glm::vec2 coord)const override{
        // coord = (coord+2.0f) * 0.25f;
@@ -104,18 +119,23 @@ public:
         chessboard = (chessboard * 0.5) - int(chessboard * 0.5);
         chessboard *= 2;
 
-        if (chessboard > 0.5) {
+        if (chessboard <= 0.5) {
             return 0.5f * color;
 
         }
 
         return color;
     }
-private:
-    glm::vec3 getNormal() const {
-        glm::vec3 normal(a, -b, c);
-        return glm::normalize(normal);
+    glm::vec3 getNormal(glm::vec3 hitpoint) override{
+        if (glm::dot(glm::vec3(a,b,c), hitpoint) > 0.0001f)
+            return -glm::vec3(a,b,c);
+        else return glm::vec3(a,b,c);;
     }
+private:
+    //glm::vec3 getNormal() const {
+    //    glm::vec3 normal(a, -b, c);
+    //    return glm::normalize(normal);
+    //}
 };
 
 struct Eye {
@@ -148,6 +168,7 @@ public:
         this->direction = direction;
         this->intensity = intensity;
         this->position = position;
+    //    this->position.x=-this->position.x;
     }
     
 };

@@ -46,6 +46,10 @@ ParsedScene *SceneParser::parse() {
                 break;
             case 'o':
             case 'r':
+                iss >> a >> b >> c >> d;
+                objs.emplace_back(a, b, c, d);
+                objsTypes.emplace_back(type);
+                break;
             case 't':
                 iss >> a >> b >> c >> d;
                 objs.emplace_back(a, b, c, d);
@@ -78,10 +82,9 @@ ParsedScene *SceneParser::parse() {
     for (int i = 0; i < objs.size(); ++i) {
         SceneObject* object;
         if (objs[i].w > 0.0f) {
-            // todo: added "-" to x component to make the position correct. maybe we dont need to do this?
            object = new Sphere(objs[i].w, glm::vec3(objs[i].x, -objs[i].y, objs[i].z), objColors[i], objsTypes[i]);
         } else {
-            object = new Plane(objs[i].x, objs[i].y, objs[i].z, objs[i].w, objColors[i], objsTypes[i]);
+            object = new Plane(objs[i].x, -objs[i].y, objs[i].z, objs[i].w, objColors[i], objsTypes[i]);
         }
         sceneObjs.push_back(object);
 
@@ -89,18 +92,17 @@ ParsedScene *SceneParser::parse() {
 
     for (int i = 0; i < lightDirections.size(); ++i) {
         if (lightDirections[i].w == 0) { // directional light
-            lights.emplace_back(glm::vec3(lightDirections[i].x, lightDirections[i].y, lightDirections[i].z),
-                                lightIntensity[i]);
+            lights.emplace_back(glm::vec3(lightDirections[i].x, -lightDirections[i].y, lightDirections[i].z),
+                                glm::vec4(lightIntensity[i].r,lightIntensity[i].g,lightIntensity[i].b,lightIntensity[i].a));
         } else { // spotlight
-            spotlights.emplace_back(glm::vec3(lightDirections[i]),lightIntensity[i],glm::vec4(lightPosition[i].x, lightPosition[i].y, lightPosition[i].z,lightPosition[i].w));
+            spotlights.emplace_back(glm::vec3(lightDirections[i].x, -lightDirections[i].y, lightDirections[i].z),lightIntensity[i],glm::vec4(lightPosition[i].x, -lightPosition[i].y, lightPosition[i].z,lightPosition[i].w));
         }
-
     }
 
-    for (int i = 0; i < spotlights.size(); ++i) {
-        spotlights[i].direction = glm::normalize(spotlights[i].direction);
-        spotlights[i].position = lightPosition[i];
-    }
+   // for (int i = 0; i < spotlights.size(); ++i) {
+   //     spotlights[i].direction = glm::normalize(spotlights[i].direction);
+   //     spotlights[i].position = lightPosition[i];
+   // }
 
     return new ParsedScene(camaraPos, ambientLightColor, sceneObjs, lights, spotlights);
 
