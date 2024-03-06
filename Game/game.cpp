@@ -32,7 +32,7 @@ void Game::Init()
     for (int i = 0; i < 3 ; ++i) { //0 - top , 1 - middle, 2 - bottom
         for (int j = 0; j < 3; ++j) { //0 - left, 1 - middle, 2 - right
             for (int k = 0; k < 3; ++k) { // 0 - back, 1 - middle, 2 - front
-                int cubeIndex = i * 3 * 3 + j * 3 + k;
+                int cubeIndex = i * 9 + j * 3 + k;
                 AddShape(Cube, -1, TRIANGLES);
                 SetShapeTex(cubeIndex, 0);
                 shapes[cubeIndex]->MyScale(glm::vec3(0.5f));
@@ -90,6 +90,6 @@ Game::~Game()
     delete theCube;
 }
 
-void Game::RubiksCubeOperation(Faces face) {
+void Game::RubiksCubeOperation(Face face) {
     theCube->rotateFace(face, clockwise);
 }

@@ -17,7 +17,7 @@ struct Cube {
     Cube(int id, Shape* cubeMesh): id(id), cubeMesh(cubeMesh) {}
 };
 
-enum Faces {
+enum Face {
     FRONT ='F',
     BACK = 'B',
     LEFT = 'L',
@@ -25,6 +25,11 @@ enum Faces {
     UP = 'U',
     DOWN = 'D'
 };
+ enum RotationAxis {
+     X_AXIS,
+     Y_AXIS,
+     Z_AXIS
+ };
 
 
 class RubiksCube {
@@ -82,7 +87,7 @@ class RubiksCube {
               9, 10,11,
               18,19,20,
             };
-    std::map<Faces, std::vector<int>> faceToFaceIndices = {
+    std::map<Face, std::vector<int>> faceToFaceIndices = {
             {UP,topFaceIndices},
             { DOWN,bottomFaceIndices},
             { LEFT,leftFaceIndices},
@@ -91,10 +96,19 @@ class RubiksCube {
             { BACK,backFaceIndices},
     };
     
+    std::map<Face,RotationAxis> faceToRotationAxis {
+            {UP, Y_AXIS},
+            { DOWN, Y_AXIS},
+            { LEFT, Z_AXIS},
+            {RIGHT, Z_AXIS},
+            {FRONT, X_AXIS},
+            {BACK, X_AXIS},
+    };
+    
     
     ~RubiksCube();
     
-   void rotateFace(Faces face, bool clockwise);
+   void rotateFace(Face face, bool clockwise);
     
 };
 

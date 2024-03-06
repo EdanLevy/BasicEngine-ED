@@ -17,13 +17,13 @@ RubiksCube::~RubiksCube() {
     this->cubeSlots.clear();
 }
 
-void RubiksCube::rotateFace(Faces face, bool clockwise) {
+void RubiksCube::rotateFace(Face face, bool clockwise) {
     auto faceIndices = this->faceToFaceIndices[face];
     auto rotationMap = clockwise ? this->clockwiseFaceRotation : this->counterClockwiseFaceRotation;
 
-    
+
     // mapping from cube index to be moved to the cube index of the new location
-    std::map<int, int> thisFaceRotationMapping = {}; 
+    std::map<int, int> thisFaceRotationMapping = {};
     for (int i = 0; i < 9; i++) {
         thisFaceRotationMapping[faceIndices[i]] = faceIndices[rotationMap[i]];
     }
@@ -44,9 +44,28 @@ void RubiksCube::rotateFace(Faces face, bool clockwise) {
     for (int i = 0; i < 9; ++i) {
         int cubeId = this->cubeSlots[faceIndices[i]]->id;
         std::cout << "Cube " << cubeId << " moved to position " << faceIndices[i] << std::endl;
+    }
+
+    if (faceToRotationAxis[face] == X_AXIS) {
+        for (int i = 0; i < 9; ++i) {
+            this->cubeSlots[faceIndices[i]]->cubeMesh->MyRotate(-90, glm::vec3(1,0,0),0);
+            auto thisCubeLocation = this->cubeSlots[faceIndices[i]]->cubeMesh->MakeTrans();
+        }
+    } else if (faceToRotationAxis[face] == Y_AXIS) {
         
+        for (int i = 0; i < 9; ++i) {
+            //move all cubes to 0,0,0 and rotate them 90 degrees around the Y axis move them back
+            this->cubeSlots[faceIndices[i]]->cubeMesh->MyRotate(-90, glm::vec3(0,1,0),0);
+        }
+    } else {
+        for (int i = 0; i < 9; ++i) {
+            
+            this->cubeSlots[faceIndices[i]]->cubeMesh->MyRotate(-90, glm::vec3(0,0,1),0);
+        }
     }
 }
+
+
 
 
 

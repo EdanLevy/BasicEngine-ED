@@ -22,7 +22,7 @@ public:
 
     void Motion();
 
-    void RubiksCubeOperation(Faces face);
+    void RubiksCubeOperation(Face face);
 
     void switchCubeRotationDirection() { clockwise = !clockwise; };
 
