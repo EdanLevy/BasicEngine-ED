@@ -49,7 +49,7 @@ void RubiksCube::rotateFace(Face face, bool clockwise) {
     if (faceToRotationAxis[face] == X_AXIS) {
         for (int i = 0; i < 9; ++i) {
             this->cubeSlots[faceIndices[i]]->cubeMesh->MyRotate(-90, glm::vec3(1,0,0),0);
-            auto thisCubeLocation = this->cubeSlots[faceIndices[i]]->cubeMesh->MakeTrans();
+//            auto thisCubeLocation = this->cubeSlots[faceIndices[i]]->cubeMesh->MakeTrans();
         }
     } else if (faceToRotationAxis[face] == Y_AXIS) {
         

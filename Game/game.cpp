@@ -36,10 +36,13 @@ void Game::Init()
                 AddShape(Cube, -1, TRIANGLES);
                 SetShapeTex(cubeIndex, 0);
                 shapes[cubeIndex]->MyScale(glm::vec3(0.5f));
-                shapes[cubeIndex]->MyTranslate(glm::vec3(1.0f*j - 1.0f ,1.0f-1.0f*i, -(3.0f - 1.0f*(3-k))), 0);
-                shapes[cubeIndex]->MakeTrans();
+                shapes[cubeIndex]->MyTranslate(glm::vec3(1.0f*k ,1.0f*j, -1.0f*i), 0);
             }
         }
+    }
+    // move all cubes the middle cube is at 0,0,0
+    for (int i = 0; i < shapes.size(); ++i) {
+        shapes[i]->MyTranslate(glm::vec3(-1.0f, -1.0f, 1.0f), 0);
     }
     
     this->theCube = new RubiksCube(shapes);
