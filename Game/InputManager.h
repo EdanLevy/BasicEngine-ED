@@ -68,13 +68,18 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
                 scn->RubiksCubeOperation((Face) key);
                 std::cout << "rotate back face" << std::endl;
                 break;
+            case GLFW_KEY_P:
+                scn->debugCube();
+                break;
+
             case GLFW_KEY_A:
                 std::cout << "doubling the rotation angle" << std::endl;
+                scn->doubleCubeRotationAngle();
                 break;
             case GLFW_KEY_Z:
                 std::cout << "dividing by 2 rotation angle" << std::endl;
+                scn->halveCubeRotationAngle();
                 break;
-
             default:
                 break;
         }

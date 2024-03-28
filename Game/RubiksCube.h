@@ -13,6 +13,7 @@
 struct Cube {
     int id;
     Shape *cubeMesh;
+    float currAngle=0.0f;
 
     Cube(int id, Shape *cubeMesh) : id(id), cubeMesh(cubeMesh) {}
 };
@@ -69,9 +70,9 @@ public:
              6, 7, 8};
 
     std::vector<int> downFaceIndices =
-            {18, 19, 20,
+            {0, 1, 2,
              9, 10, 11,
-             0, 1, 2};
+             18, 19, 20};
     std::vector<int> leftFaceIndices =
             {24, 15, 6,
              21, 12, 3,
@@ -87,9 +88,9 @@ public:
              0, 1, 2,
             };
     std::vector<int> backFaceIndices =
-            {24, 25, 26,
+            {18,19,20,
              21, 22, 23,
-             18, 19, 20,};
+            24, 25, 26,};
     std::map<Face, std::vector<int>> faceToFaceIndices = {
             {UP,    upFaceIndices},
             {DOWN,  downFaceIndices},
@@ -107,13 +108,24 @@ public:
             {FRONT, Z_AXIS},
             {BACK,  Z_AXIS},
     };
+    std::map<Face, glm::vec3> faceToTranslation{
+            {UP,    glm::vec3 (0,0,1.0)},
+            {DOWN,  glm::vec3 (0,0,-1.0)},
+            {LEFT,  glm::vec3 (-1.0,0,0)},
+            {RIGHT, glm::vec3 (1.0,0,0)},
+            {FRONT, glm::vec3 (0,1.0,0)},
+            {BACK,  glm::vec3 (0,-1.0,0)},
+    };
 
 
     ~RubiksCube();
 
-    void rotateFace(Face face, bool clockwise);
+    void rotateFace(Face face, float clockwise,float angle);
+    void debugCubeFaceState(Face face);
+    void debugCubeState();
+    float floatMod(Cube* cube,float currAngle,float addedDegrees);
 
-};
+    };
 
 
 #endif //GAME_RUBIKSCUBE_H

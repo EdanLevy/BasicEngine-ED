@@ -94,5 +94,9 @@ Game::~Game()
 }
 
 void Game::RubiksCubeOperation(Face face) {
-    theCube->rotateFace(face, clockwise);
+    theCube->rotateFace(face, clockwise,angle);
+}
+
+void Game::debugCube() {
+    theCube->debugCubeState();
 }

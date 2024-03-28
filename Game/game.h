@@ -24,12 +24,23 @@ public:
 
     void RubiksCubeOperation(Face face);
 
-    void switchCubeRotationDirection() { clockwise = !clockwise; };
+    void debugCube();
+
+    void switchCubeRotationDirection() { clockwise = -clockwise; };
+    void doubleCubeRotationAngle() {
+        if(angle<180)
+            angle*=2;
+    }
+    void halveCubeRotationAngle() {
+        if(angle>45)
+            angle/=2;
+    }
 
     ~Game(void);
 
 private:
     RubiksCube *theCube;
-    bool clockwise = true;
+    float angle= 90.0f;
+    int clockwise = -1.0f;
 };
 

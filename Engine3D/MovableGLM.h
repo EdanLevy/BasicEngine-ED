@@ -9,10 +9,13 @@ public:
 	glm::mat4 MakeTrans() const;
 	void MyTranslate(glm::vec3 delta, int mode);
 	void MyRotate(float angle, const glm::vec3 &vec, int mode);
-	void MyScale(glm::vec3 scale);
+    void MySpecialRotate(float angle, const glm::vec3 &vec, int mode);
+    void MyScale(glm::vec3 scale);
 	void ZeroTrans();
+    glm::mat4 prevRot;
+    glm::mat4 trans;
+    glm::mat4 rot;
+    glm::mat4 scl;
+
 private:
-	glm::mat4 trans;
-	glm::mat4 rot;
-	glm::mat4 scl;
 };
